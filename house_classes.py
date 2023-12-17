@@ -49,7 +49,7 @@ class House:
 
 cp_air = 4.18
 cop = 3.5
-
+t_initial = 250
 
 
 file_name = r'ch_temp_2019/temp_data_2019.csv'
@@ -58,27 +58,40 @@ t_data = t_data['t2m']
 temp_list = list(t_data)
 temp_list_kelvin = [i + 273.15 for i in temp_list]
 
-old_house = House(200, 20, 80, 2, 4.8, 1, 2.5, 50)
+old_house = House(200, 20, 80, 2, 4.8, 1, 2.5, 5000)
+med_house = House(200, 20, 80, 1, 2, 1, 2.5, 5000)
+new_house = House(200, 20, 80, 0.5, 1.2, 1, 2.5, 5000)
 
-t_series = []
-t_initial = 250
-t_series.append(t_initial)
-hg_series =[]
+t_series_old = []
+t_series_med = []
+t_series_new = []
+
+t_series_old.append(t_initial)
+t_series_med.append(t_initial)
+t_series_new.append(t_initial)
+
 
 for idx, t in enumerate(temp_list_kelvin):
-    t_next = t_series[idx] + old_house.get_temp_diff(3600, t, t_series[idx])
-    t_series.append(t_next)
+    t_next_old = t_series_old[idx] + old_house.get_temp_diff(3600, t, t_series_old[idx])
+    t_next_med = t_series_med[idx] + med_house.get_temp_diff(3600, t, t_series_med[idx])
+    t_next_new = t_series_new[idx] + new_house.get_temp_diff(3600, t, t_series_new[idx])
 
-print(t_series)
+    t_series_old.append(t_next_old)
+    t_series_med.append(t_next_med)
+    t_series_new.append(t_next_new)
+
+
+
 
 hours_in_year = np.arange(1,8762,1)
 
-
-plt.plot(hours_in_year, t_series, marker='o', linestyle='-')
-
+plt.plot(hours_in_year, t_series_old)
+plt.plot(hours_in_year, t_series_med)
+plt.plot(hours_in_year, t_series_new)
 
 plt.xlabel('X-axis Label')
 plt.ylabel('Y-axis Label')
 plt.title('X on Y Plot')
+
 
 plt.show()
