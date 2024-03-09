@@ -18,16 +18,26 @@ hourly_irradiance_from_csv <- function(dataset_filename, year) {
   return(yearly_irradiance_data)
 }
 
-## A FUNCTION THAT TAKES THE IRRADIANCE DATA AND PREPARES IT SUCH THAT solaR CAN PROCESS THEM
-prepare_data_for_solaR <- function(yearly_irradiance_data, year, month_week) {
+## A FUNCTION THAT TAKES THE IRRADIANCE DATA AND AN HOURLY TIME SERIES AND PREPARES IT SUCH THAT solaR CAN PROCESS THEM
+prepare_data_for_solaR <- function(yearly_irradiance_data, time_index) {
 
-  month_string <- "-01"
 
   #rename columns according to solaR documentation
   colnames(yearly_irradiance_data)[colnames(yearly_irradiance_data) == 'irradiance_surface'] <- 'G0'
   colnames(yearly_irradiance_data)[colnames(yearly_irradiance_data) == 'temperature'] <- 'Ta'
 
-  #find the amount of hours for the specified time range
+  #convert to zoo format
+  prepared_data <- zoo(yearly_irradiance_data, time_index)
+
+
+  return(prepared_data)
+}
+
+## A FUNCTION THAT TAKES DESIRED TIME RANGE AND GENERATES AN HOURLY TIME SERIES
+get_time_series <- function(year, month_week) {
+  month_string <- "-01"
+
+    #find the amount of hours for the specified time range
   if (month_week[1] == 0) { #if range == full year
     if (year %% 4 == 0) { #check if leap year
       hours <- 8774
@@ -75,11 +85,7 @@ prepare_data_for_solaR <- function(yearly_irradiance_data, year, month_week) {
   #create an hourly time series over an entire year
   time_index <- seq(from = as.POSIXct(date_string), by = "hour", length.out = hours, tz = "CET")
 
-  #convert to zoo format
-  prepared_data <- zoo(yearly_irradiance_data, time_index)
-
-
-  return(prepared_data)
+  return(time_index)
 }
 
 ## A FUNCTION THAT READS A CVS FILE AND FINDS THE RANGE OF YEARS
@@ -178,20 +184,21 @@ total_supply <- function(prepared_data, azimuthal_angle) {
 
 
 # Parameters
-azimuthal_angle <- 90
+azimuthal_angle <- 0
+latitude <- 47
 
 year <- get_desired_year_from_user(find_range_of_years("ninja_weather_country_CH_merra-2_population_weighted.csv"))
 
 month_week <- get_desired_time_range_from_user()
 
-print(month_week)
-
 hourly_irradiance <- hourly_irradiance_from_csv("ninja_weather_country_CH_merra-2_population_weighted.csv", year)
 
-prepared_data <- prepare_data_for_solaR(yearly_irradiance_data = hourly_irradiance, year, month_week)
+time_index <- get_time_series(year, month_week)
+
+prepared_data <- prepare_data_for_solaR(yearly_irradiance_data = hourly_irradiance, time_index)
 
 
-hourly_generation <- prodGCPV(47,
+hourly_generation <- prodGCPV(latitude,
          "fixed",
          "bdI",
          dataRad =  prepared_data,
@@ -202,8 +209,14 @@ hourly_generation <- prodGCPV(47,
 #TODO FIGURE OUT WHY NA AND WHY NO PRODUCTION IN AFTERNOON
 hourly_generation_data <- as.data.frameI(hourly_generation)
 
-head(hourly_generation_data, 10)
+clean_hourly_generation_data <- na.fill(hourly_generation_data, fill = 0)
 
-print("…")
+print(paste("AZIMUTHAL ANGLE:", azimuthal_angle))
+head(clean_hourly_generation_data, 24)
+tail(clean_hourly_generation_data, 24)
 
-tail(hourly_generation_data, 10)
+hourly_Pac_generation_data <- clean_hourly_generation_data[,"Pac"]
+
+plot.zoo(hourly_Pac_generation_data)
+
+
