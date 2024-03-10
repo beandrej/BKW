@@ -157,9 +157,9 @@ class House:
 
 class RunSimulation:
 
-    def __init__(self, house, temp_list_kelvin, irr_list, timestep, scenario={}):
+    def __init__(self, house, t_outside, irr_list, timestep, scenario={}):
         self.house = house
-        self.temp_list_kelvin = temp_list_kelvin
+        self.t_outside = t_outside
         self.irr_list = irr_list
         self.timestep = timestep
         self.scenario = scenario
@@ -169,7 +169,7 @@ class RunSimulation:
         increase_temp = self.scenario["temp_develop"]
         output_dictionary = {}
         for idx, year in enumerate(years):
-            self.temp_list_kelvin = [t + increase_temp[idx] for t in self.temp_list_kelvin] # abs T increase
+            self.t_outside = [t + increase_temp[idx] for t in self.t_outside] # abs T increase
             output_dictionary[year] = self.run()
         return output_dictionary
 
@@ -178,7 +178,7 @@ class RunSimulation:
         e_demand_list_HP = [self.house.hp.hp_state]
         t_list = [self.house.t_initial]
 
-        for idx, t in enumerate(self.temp_list_kelvin):
+        for idx, t in enumerate(self.t_outside):
             t_next = t_list[idx] + self.house.get_t_diff(
                 self.timestep, t, t_list[idx], self.irr_list[idx]
             )
@@ -209,14 +209,17 @@ class Plot_output:
         plt.title("Net Demand")
         plt.show()
 
-    def plot_temperature(self):
+    def plot_temperature(self, window):
         for year in self.output:
+            days_df = pd.DataFrame(self.days_in_year, columns=['hours'])
+            temp_df = pd.DataFrame(self.output[year][0], columns=['temp'])
+            roll_days = days_df['hours'].rolling(window=window).mean()
+            roll_temp = temp_df['temp'].rolling(window=window).mean()
             plt.plot(
-                self.days_in_year,
-                self.output[year][0],
+                roll_days,
+                roll_temp,
                 label="SFH after 2000 " + str(year),
             )
-            # plt.plot(days_in_year, T_SFH_before, label='SFH before 2000')
         plt.axhline(y=self.t_des, color="r", linestyle="dotted", label="T_desired")
         plt.xlabel("Days in year")
         plt.ylabel("Temperature [K]")
