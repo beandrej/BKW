@@ -27,8 +27,8 @@ house_params = {
         "U_window": 1.2,
         "U_floor": 0.3,
         "height": 5,
-        "cooling_cap": 0,
-        "heating_cap": 0,
+        "cooling_cap": 4000,
+        "heating_cap": 4000,
         "shgc": 0.6,
         "perc_s_windows": 0.35,
         "people": 3,
@@ -48,8 +48,8 @@ house_params = {
         "U_window": 2.7,
         "U_floor": 1.2,
         "height": 5,
-        "cooling_cap": 2000,
-        "heating_cap": 2000,
+        "cooling_cap": 4000,
+        "heating_cap": 4000,
         "shgc": 0.6,
         "perc_s_windows": 0.35,
         "people": 3,
@@ -90,8 +90,8 @@ house_params = {
         "U_window": 2.8,
         "U_floor": 1.3,
         "height": 10,
-        "cooling_cap": 2000,
-        "heating_cap": 2000,
+        "cooling_cap": 4000,
+        "heating_cap": 4000,
         "shgc": 0.6,
         "perc_s_windows": 0.35,
         "people": 3,
@@ -107,6 +107,9 @@ house_params = {
 
 # INITIALIZING SIMULATION OBJECTS
 simulations_CH_2019 = {}
+scenario_output = {}
+comparison = {}
+comparison_output = {}
 
 scenario_Switzerland = {
     "years": ["2020", "2030", "2040", "2050"],
@@ -116,17 +119,23 @@ scenario_Switzerland = {
 for house_name, params in house_params.items():
     house_obj = House(**params)
     simulations_CH_2019[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600, scenario_Switzerland)
-
+    comparison[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600)
 
 # CALCULATION
-scenario_output = simulations_CH_2019["modern_SFH"].run_scenario()
+for house_type in comparison:
+    comparison_output[house_type] = comparison[house_type].run()
+
+scenario_output = simulations_CH_2019["modern_MFH"].run_scenario()
 PV_generation_2019_ZRH = PV("PV_data/PVoutput_2019.csv")
 
 
 
+# PLOT
+plot2 = Plot_output(comparison_output, PV_generation_2019_ZRH.return_PV_list())
+plot2.plot_temp_compare(100)
 
 plots = Plot_output(scenario_output, PV_generation_2019_ZRH.return_PV_list())
-plots.plot_temperature(168)
+plots.plot_temperature_scenario(24)
 plots.plot_ac_demand()
 plots.plot_aggregated_ac_demand_over_years()
 plots.plot_base_case_with_PV()

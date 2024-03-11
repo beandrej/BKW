@@ -209,7 +209,7 @@ class Plot_output:
         plt.title("Net Demand")
         plt.show()
 
-    def plot_temperature(self, window):
+    def plot_temperature_scenario(self, window):
         for year in self.output:
             days_df = pd.DataFrame(self.days_in_year, columns=['hours'])
             temp_df = pd.DataFrame(self.output[year][0], columns=['temp'])
@@ -226,6 +226,26 @@ class Plot_output:
         plt.title("Inside temperature of the house")
         plt.legend()
         plt.show()
+
+    def plot_temp_compare(self, window):
+        for house_type in self.output:
+            days_df = pd.DataFrame(self.days_in_year, columns=['hours'])
+            temp_df = pd.DataFrame(self.output[house_type][0], columns=['temp'])
+            roll_days = days_df['hours'].rolling(window=window).mean()
+            roll_temp = temp_df['temp'].rolling(window=window).mean()
+            plt.plot(
+                roll_days,
+                roll_temp,
+                label=str(house_type)
+            )
+        plt.axhline(y=self.t_des, color="r", linestyle="dotted", label="T_desired")
+        plt.xlabel("Days in year")
+        plt.ylabel("Temperature [K]")
+        plt.title("Inside temperature of the house")
+        plt.legend()
+        plt.show()
+        
+        
 
     def plot_ac_demand(self):
         for year in self.output:
