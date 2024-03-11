@@ -107,6 +107,9 @@ house_params = {
 
 # INITIALIZING SIMULATION OBJECTS
 simulations_CH_2019 = {}
+scenario_output = {}
+comparison = {}
+comparison_output = {}
 
 scenario_Switzerland = {
     "years": ["2020", "2030", "2040", "2050"],
@@ -116,17 +119,23 @@ scenario_Switzerland = {
 for house_name, params in house_params.items():
     house_obj = House(**params)
     simulations_CH_2019[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600, scenario_Switzerland)
-
+    comparison[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600)
 
 # CALCULATION
-scenario_output = simulations_CH_2019["modern_SFH"].run_scenario()
+for house_type in comparison:
+    comparison_output[house_type] = comparison[house_type].run()
+
+scenario_output = simulations_CH_2019["modern_MFH"].run_scenario()
 PV_generation_2019_ZRH = PV("PV_data/PVoutput_2019.csv")
 
 
 
+# PLOT
+plot2 = Plot_output(comparison_output, PV_generation_2019_ZRH.return_PV_list())
+plot2.plot_temp_compare(100)
 
 plots = Plot_output(scenario_output, PV_generation_2019_ZRH.return_PV_list())
-plots.plot_temperature()
+plots.plot_temperature_scenario(24)
 plots.plot_ac_demand()
 plots.plot_aggregated_ac_demand_over_years()
 plots.plot_base_case_with_PV()
