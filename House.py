@@ -174,8 +174,8 @@ class RunSimulation:
         return output_dictionary
 
     def run(self):
-        e_demand_list_AC = [self.house.ac.ac_state]
-        e_demand_list_HP = [self.house.hp.hp_state]
+        AC_consumption = [self.house.ac.ac_state * self.house.cooling_cap]
+        HP_consumption = [self.house.hp.hp_state * self.house.cooling_cap]
         t_list = [self.house.t_initial]
 
         for idx, t in enumerate(self.t_outside):
@@ -184,12 +184,14 @@ class RunSimulation:
             )
             t_list.append(t_next)
 
-            e_demand_list_AC.append(self.house.cooling_cap * self.house.ac.ac_state)
-            e_demand_list_HP.append(self.house.heating_cap * self.house.hp.hp_state)
+            AC_consumption.append(self.house.cooling_cap * self.house.ac.ac_state)
+            HP_consumption.append(self.house.heating_cap * self.house.hp.hp_state)
 
-        tot_demand_AC = sum(e_demand_list_AC) / self.house.ac.cop
+        demand_AC = sum(AC_consumption) / self.house.ac.cop
+        demand_HP = sum(HP_consumption) / self.house.ac.cop
+        total = demand_AC + demand_HP
 
-        return t_list, e_demand_list_AC, tot_demand_AC
+        return t_list, total, demand_AC, demand_HP
 
 
 class Plot_output:
