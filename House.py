@@ -191,7 +191,7 @@ class RunSimulation:
         demand_HP = sum(HP_consumption) / self.house.ac.cop
         total = demand_AC + demand_HP
 
-        return t_list, total, demand_AC, demand_HP
+        return t_list, AC_consumption, demand_AC, demand_HP, total
 
 
 class Plot_output:

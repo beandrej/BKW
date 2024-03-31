@@ -53,7 +53,7 @@ house_params = {
         "height": 5,
         "cooling_cap": 4000,
         "heating_cap": 4000,
-        "shgc": 0.6,
+        "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 3,
         "v_rate": 1.4,
@@ -74,7 +74,7 @@ house_params = {
         "height": 10,
         "cooling_cap": 4000,
         "heating_cap": 4000,
-        "shgc": 0.6,
+        "shgc": 0.2,
         "perc_s_windows": 0.3,
         "people": 10,
         "v_rate": 0.7,
@@ -95,7 +95,7 @@ house_params = {
         "height": 10,
         "cooling_cap": 4000,
         "heating_cap": 4000,
-        "shgc": 0.6,
+        "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 10,
         "v_rate": 0.7,
@@ -138,14 +138,14 @@ scenario_output = simulations_CH_2019["modern_MFH"].run_scenario()
 
 #------------ Plot resulting output ----------------
 
-# plot2 = Plot_output(comparison_output, PV_generation_2019_ZRH.return_PV_list())
-# plot2.plot_temp_compare(168)
+plot2 = Plot_output(comparison_output, PV_generation_2019_ZRH.return_PV_list())
+plot2.plot_temp_compare(168)
 
-# plots = Plot_output(scenario_output, PV_generation_2019_ZRH.return_PV_list())
-# plots.plot_temperature_scenario(168)
-# plots.plot_ac_demand()
-# plots.plot_aggregated_ac_demand_over_years()
-# plots.plot_base_case_with_PV()
+plots = Plot_output(scenario_output, PV_generation_2019_ZRH.return_PV_list())
+plots.plot_temperature_scenario(168)
+plots.plot_ac_demand()
+plots.plot_aggregated_ac_demand_over_years()
+plots.plot_base_case_with_PV()
 
 print(f'Total electricity needed for old MFH: {round(comparison_output['old_MFH'][1]) / 1e6} [MW]')
 print(f'Cooling needed for old MFH: {round(comparison_output['old_MFH'][2]) / 1e6} [MW]')
