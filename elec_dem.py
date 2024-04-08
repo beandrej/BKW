@@ -146,7 +146,7 @@ plots.plot_temperature_scenario(168)
 plots.plot_ac_demand()
 plots.plot_aggregated_ac_demand_over_years()
 plots.plot_base_case_with_PV()
-
+"""
 print(f'Total electricity needed for old MFH: {round(comparison_output['old_MFH'][4]) / 1e6} [MW]')
 print(f'Cooling needed for old MFH: {round(comparison_output['old_MFH'][2]) / 1e6} [MW]')
 print(f'Heating needed for old MFH: {round(comparison_output['old_MFH'][3]) / 1e6} [MW]\n')
@@ -162,3 +162,4 @@ print(f'Heating needed for modern MFH: {round(comparison_output['modern_MFH'][3]
 print(f'Total electricity needed for modern SFH: {round(comparison_output['modern_SFH'][4]) / 1e6} [MW]')
 print(f'Cooling needed for modern SFH: {round(comparison_output['modern_SFH'][2]) / 1e6} [MW]')
 print(f'Heating needed for modern SFH: {round(comparison_output['modern_SFH'][3]) / 1e6} [MW]\n')
+"""

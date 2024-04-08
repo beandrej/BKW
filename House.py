@@ -173,10 +173,35 @@ class RunSimulation:
             output_dictionary[year] = self.run()
         return output_dictionary
 
+    #ToDo add smooting of outdoor temperature
+
+    def temperature_smoothing(self):
+        #split temperature data into days
+        T_days = np.split(self.t_outside, range(24, 8760, 24))
+        #take the average of each day
+        T_days_avg = [np.mean(day) for day in T_days]
+        #indices
+        idx = list(range(0, 8760, 24))
+        idx += [len(self.t_outside)+1]
+        for i,day in enumerate(T_days):
+            if i == 0:
+                self.t_outside[idx[i]:idx[i+1]] = [T_days_avg[i]]*24
+            elif i == 1:
+                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1]) / 1.5]*24
+            elif i == 2:
+                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2]) / 1.75]*24
+            else:
+                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2] + 0.125 * T_days_avg[i-3]) / 1.875]*24
+        print(self.t_outside)
+
+
+
     def run(self):
         AC_consumption = [self.house.ac.ac_state * self.house.cooling_cap]
         HP_consumption = [self.house.hp.hp_state * self.house.cooling_cap]
         t_list = [self.house.t_initial]
+        #smooth temperature to consider the inertia of the house
+        self.temperature_smoothing()
 
         for idx, t in enumerate(self.t_outside):
             t_next = t_list[idx] + self.house.get_t_diff(
