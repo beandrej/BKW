@@ -2,119 +2,132 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-air_density = 1.293  # [kg/m^3]
-cp_air = 1005 * air_density  # [J/(m^3*K)]
-cc_density = 800  # [kg/m^3]
-cp_cc = 840 * cc_density  # [J/(m^3*K)]
+# -------------- CONSTANTS -------------
+
+heat_cap_air = 1005 # [J/(kg*K)] 
+heat_cap_concete = 840 # [J/(kg*K)]
+density_air = 1.293 # [kg/m3]
+density_cc = 800 # [kg/m3]
+
+cp_air =  heat_cap_air * density_air # [J/(m3*K)]
+cp_cc = heat_cap_concete * density_cc # [J/(m3*K)]
+
+hours_in_year = np.arange(0, 8760, 1)
+
+# ----------------- Set AC/HP -----------------------
+
+cop_AC = 3.5
+cop_HP = 3.5
+
+# linear increase of control in temperature range [K]
+operation_range_HP = 0.2
+operation_range_AC = 0.2
 
 
-class ACUnit:
+class ACUnit: 
 
-    def __init__(self, power, setpoint, range, t_initial, cop=3.5):
-        self.setpoint = setpoint
-        self.range = range
-        self.power = power
-        self.lb = self.setpoint
-        self.ub = self.setpoint + self.range
-        self.t_initial = t_initial
-        self.cop = cop
-        self.ac_state = self.set_ac()
+    def __init__(self, power, setpoint, t_initial):
+        self.setpoint = setpoint #desired temperature [K]
+        self.power = power # power [W]
+        self.t_initial = t_initial # initial temp [K]
+        self.COP = cop_AC # coefficient of performance
 
-    def set_ac(self):
-        if self.t_initial < self.lb:
-            self.ac = 0
-            return self.ac
-        elif self.t_initial > self.ub:
-            self.ac = 1
-            return self.ac
+        # linear increase range
+        self.lowerbound = self.setpoint 
+        self.upperbound = self.setpoint + operation_range_AC
+        self.init = self.init_ac() # initialize on/off mode
+
+    def init_ac(self):
+        if self.t_initial > self.upperbound: 
+            return 1
         else:
-            self.ac = 0
-            return self.ac
-
+            return 0
+        
+    # Controller 0%, 50%, 80%, 100%   
     def control(self, t_in):
-
-        if self.ub < t_in:
-            self.ac_state = 1
-        elif self.lb > t_in:
-            self.ac_state = 0
-        else:
-            self.ac_state = 0.8 + (t_in - self.lb) / (self.ub - self.lb) * 0.2
-        return self.ac_state
+        if t_in > self.upperbound:
+            self.output = 1 # 100%
+        elif t_in < self.lowerbound:
+            self.output = 0 # 0%
+        else:  
+            if (t_in - self.lowerbound) / (self.upperbound - self.lowerbound) >= 0.5: # when in upper 65% of temp range
+                self.output = 0.8 # set output to 80%
+            else:
+                self.output = 0.5 # set output to 50%
+        return self.output
 
     def is_on(self):
-        return self.ac_state == 1
+        return self.output > 0
 
 
 class HeatPump:
 
-    def __init__(self, power, setpoint, range, t_initial, cop=3.5):
-        self.power = power
+    def __init__(self, power, setpoint, t_initial):
         self.setpoint = setpoint
-        self.range = range
-        self.lb = self.setpoint - self.range
-        self.ub = self.setpoint
+        self.power = power
         self.t_initial = t_initial
-        self.cop = cop
-        self.hp_state = self.set_hp()
+        self.COP = cop_HP
 
-    def set_hp(self):
-        if self.t_initial < self.lb:
-            self.hp = 0
-            return self.hp
-        elif self.t_initial > self.ub:
-            self.hp = 1
-            return self.hp
+        # linear increase range
+        self.lowerbound = self.setpoint - operation_range_HP
+        self.upperbound = self.setpoint
+        self.output = self.init_hp()
+
+    def init_hp(self):
+        if self.t_initial < self.lowerbound: 
+            return 0 
         else:
-            self.hp = 0
-            return self.hp
+            return 1
 
+    # Controller 0%, 50%, 80%, 100%
     def control(self, t_in):
-        if self.lb > t_in:
-            self.hp_state = 1
-        elif self.ub < t_in:
-            self.hp_state = 0
-        else:
-            self.hp_state = 0.8 + (t_in - self.lb) / (self.ub - self.lb) * 0.2
-        return self.hp_state
+        if t_in < self.lowerbound:
+            self.output = 1 # 100%
+        elif t_in > self.upperbound:
+            self.output = 0 # 0%
+        else:  
+            if (t_in - self.lowerbound) / (self.upperbound - self.lowerbound) <= 0.5: # when in lower 50% of temp range
+                self.output = 0.8 # set output to 80%
+            else:
+                self.output = 0.5 # set output to 50%
+        return self.output
 
     def is_on(self):
-        return self.hp_state == 1
-
-
+        return self.output > 0
+    
 class House:
 
     def __init__(
         self,
-        A_wall,
-        A_window,
-        A_floor,
-        U_wall,
-        U_window,
-        U_floor,
-        height,
-        cooling_cap,
-        heating_cap,
-        shgc,
-        perc_s_windows,
-        people,
-        v_rate,
-        setpoint_ac,
-        setpoint_hp,
+        A_wall, # Wall area [m2]
+        A_window, # Window area [m2]
+        A_floor, # Floor area [m2]
+        U_wall, # Wall resistance [W/(m^2*K)]
+        U_window, # Window resistance [W/(m^2*K)]
+        U_floor, # Floor resistance [W/(m^2*K)]
+        height, # Heigh [m2]
+        cooling_cap, # AC capacity
+        heating_cap, # HP capacity
+        shgc, # Solar heat gain coefficient of windows [0 to 1]
+        perc_s_windows, # Percentage of windows facing south [0 to 1]
+        people, # People in house
+        v_rate, # Venitaltion rate per hour [0 to 1] (little influence)
+        setpoint_ac, # Desired AC temp [K]
+        setpoint_hp, # Desired HP temp [K]
         shade_factor=0.7,
-        t_initial=292,
-        t_des=295,
+        t_initial=295,
         wall_th=0.1,
     ):
 
-        self.A_wall = A_wall  # [m^2]
-        self.A_window = A_window  # [m^2]
-        self.A_floor = A_floor  # [m^2]
-        self.U_wall = U_wall  # [W/(m^2*K)]
-        self.U_window = U_window  # [W/(m^2*K)]
-        self.U_floor = U_floor  # [W/(m^2*K)]
-        self.height = height  # [m]
-        self.cooling_cap = cooling_cap  # [W]
-        self.heating_cap = heating_cap  # [W]
+        self.A_wall = A_wall  
+        self.A_window = A_window  
+        self.A_floor = A_floor  
+        self.U_wall = U_wall  
+        self.U_window = U_window  
+        self.U_floor = U_floor  
+        self.height = height  
+        self.cooling_cap = cooling_cap 
+        self.heating_cap = heating_cap 
         self.shgc = shgc
         self.people = people
         self.windows_s = perc_s_windows * self.A_window
@@ -122,19 +135,19 @@ class House:
         self.shade_factor = shade_factor
         self.setpoint_ac = setpoint_ac
         self.setpoint_hp = setpoint_hp
-        self.t_dev = 1
-        self.t_des = t_des
         self.t_initial = t_initial
         self.wall_th = wall_th
-        self.ac = ACUnit(cooling_cap, self.setpoint_ac, self.t_dev, self.t_initial)
-        self.hp = HeatPump(heating_cap, self.setpoint_hp, self.t_dev, self.t_initial)
+        self.ac = ACUnit(cooling_cap, self.setpoint_ac, self.t_initial)
+        self.hp = HeatPump(heating_cap, self.setpoint_hp, self.t_initial)
         self.inertia = self.set_inertia()
 
+    # calculate inertia of house
     def set_inertia(self):  # [J/K]
         air_term = cp_air * self.A_floor * self.height
         cc_term = cp_cc * self.A_wall * self.wall_th
         return air_term + cc_term
 
+    # calculate first part of heatgain
     def get_heatgain(self, t_out, t_in, solar_irr):  # [W], heat gain per timestep
         heat_gain = (
             self.A_wall * self.U_wall
@@ -146,6 +159,7 @@ class House:
         people_term = self.people * 100  # 100[W] per person
         return heat_gain + solar_term + people_term
 
+    # delta for next temperature value
     def get_t_diff(self, timestep, t_out, t_in, solar):  # [K]
         t_diff = (
             (self.get_heatgain(t_out, t_in, solar) * timestep / self.inertia)
@@ -164,6 +178,50 @@ class RunSimulation:
         self.timestep = timestep
         self.scenario = scenario
 
+    # smoothing outside temperature
+    def temperature_smoothing(self):
+        #split temperature data into days
+        T_days = np.split(self.t_outside, range(24, 8760, 24))
+        #take the average of each day
+        T_days_avg = [np.mean(day) for day in T_days]
+        #indices
+        idx = list(range(0, 8760, 24))
+        idx += [len(self.t_outside)+1]
+        for i,day in enumerate(T_days):
+            if i == 0:
+                self.t_outside[idx[i]:idx[i+1]] = [T_days_avg[i]]*24
+            elif i == 1:
+                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1]) / 1.5]*24
+            elif i == 2:
+                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2]) / 1.75]*24
+            else:
+                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2] + 0.125 * T_days_avg[i-3]) / 1.875]*24
+        #print(self.t_outside)
+
+    # main calculation
+    def run(self):
+        AC_consumption = [self.house.ac.init_ac() * self.house.cooling_cap]
+        HP_consumption = [self.house.hp.init_hp() * self.house.cooling_cap]
+        t_list = [self.house.t_initial]
+        #smooth temperature to consider the inertia of the house
+        self.temperature_smoothing()
+
+        for idx, t in enumerate(self.t_outside):
+            t_next = t_list[idx] + self.house.get_t_diff(
+                self.timestep, t, t_list[idx], self.irr_list[idx]
+            )
+            t_list.append(t_next)
+
+            AC_consumption.append(self.house.cooling_cap * self.house.ac.control(t_list[idx]))
+            HP_consumption.append(self.house.heating_cap * self.house.hp.control(t_list[idx]))
+
+        demand_AC = sum(AC_consumption) / self.house.ac.COP
+        demand_HP = sum(HP_consumption) / self.house.ac.COP
+        total = demand_AC + demand_HP
+
+        return t_list, AC_consumption, demand_AC, demand_HP, total
+
+    # run screnarios for future years
     def run_scenario(self):
         years = self.scenario["years"]
         increase_temp = self.scenario["temp_develop"]
@@ -173,26 +231,11 @@ class RunSimulation:
             output_dictionary[year] = self.run()
         return output_dictionary
 
-    def run(self):
-        e_demand_list_AC = [self.house.ac.ac_state]
-        e_demand_list_HP = [self.house.hp.hp_state]
-        t_list = [self.house.t_initial]
 
-        for idx, t in enumerate(self.t_outside):
-            t_next = t_list[idx] + self.house.get_t_diff(
-                self.timestep, t, t_list[idx], self.irr_list[idx]
-            )
-            t_list.append(t_next)
-
-            e_demand_list_AC.append(self.house.cooling_cap * self.house.ac.ac_state)
-            e_demand_list_HP.append(self.house.heating_cap * self.house.hp.hp_state)
-
-        tot_demand_AC = sum(e_demand_list_AC) / self.house.ac.cop
-
-        return t_list, e_demand_list_AC, tot_demand_AC
-
+# plot class, define different plots
 
 class Plot_output:
+
     def __init__(self, output_dictionary, PV_output, t_des=295):
         self.output = output_dictionary
         self.hours_in_year = list(np.arange(0, 8761, 1))
@@ -218,7 +261,7 @@ class Plot_output:
             plt.plot(
                 roll_days,
                 roll_temp,
-                label="SFH after 2000 " + str(year),
+                label="MFH after 2000 " + str(year),
             )
         plt.axhline(y=self.t_des, color="r", linestyle="dotted", label="T_desired")
         plt.xlabel("Days in year")
@@ -238,6 +281,7 @@ class Plot_output:
                 roll_temp,
                 label=str(house_type)
             )
+        #plt.plot(x, y)
         plt.axhline(y=self.t_des, color="r", linestyle="dotted", label="T_desired")
         plt.xlabel("Days in year")
         plt.ylabel("Temperature [K]")
@@ -252,10 +296,8 @@ class Plot_output:
             plt.plot(
                 self.days_in_year,
                 self.output[year][1],
-                label="SFH after 2000 " + str(year),
+                label="MFH after 2000 " + str(year), 
             )
-            # plt.plot(days_in_year, T_SFH_before, label='SFH before 2000')
-        # plt.axhline(y=t_des, color='r', linestyle='dotted', label='T_desired')
         plt.xlabel("Days in year")
         plt.ylabel("Demand [W]")
         plt.title("Cooling Demand")
@@ -274,7 +316,7 @@ class Plot_output:
         plt.title("Evolution of Cooling Demand")
         plt.show()
 
-
+# pv input
 class PV:
     def __init__(self, path):
         self.PV_data = pd.read_csv(path, header=None)
