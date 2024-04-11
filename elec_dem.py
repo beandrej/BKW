@@ -12,7 +12,7 @@ days_in_year = [i / 24 for i in hours_in_year]
 
 T_2019_ZRH_file_path = r"ren_ninja/ZRH_2019_t2m.csv"
 T_2019_ZRH_csv = pd.read_csv(T_2019_ZRH_file_path, delimiter=",", header=3)["t2m"].tolist()
-T_outside_2019_ZRH = [temp + 273.15 for temp in T_2019_ZRH_csv]
+T_outside_2019_ZRH = [temp + 273.15 for temp in T_2019_ZRH_csv] # convert to kelvin
 
 irr_2019_ZRH_file_path = r"ren_ninja/ninja_weather_47.3744_8.5410_uncorrected.csv"
 irr_2019_ZRH = pd.read_csv(irr_2019_ZRH_file_path, delimiter=",", header=3)["swgdn"].tolist()
@@ -40,7 +40,6 @@ house_params = {
         "setpoint_hp": 293,
         "shade_factor": 0.7,
         "t_initial": 295,
-        "t_des": 293,
         "wall_th": 0.1
     },
     "old_SFH": {
@@ -61,7 +60,6 @@ house_params = {
         "setpoint_hp": 293,
         "shade_factor": 0.7,
         "t_initial": 295,
-        "t_des": 293,
         "wall_th": 0.1
     },
     "modern_MFH": {
@@ -73,7 +71,7 @@ house_params = {
         "U_floor": 0.3,
         "height": 10,
         "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "heating_cap": 8000,
         "shgc": 0.2,
         "perc_s_windows": 0.3,
         "people": 10,
@@ -82,7 +80,6 @@ house_params = {
         "setpoint_hp": 293,
         "shade_factor": 0.7,
         "t_initial": 295,
-        "t_des": 293,
         "wall_th": 0.1
     },
     "old_MFH": {
@@ -102,13 +99,12 @@ house_params = {
         "setpoint_ac": 295,
         "setpoint_hp": 293,
         "shade_factor": 0.7,
-        "t_initial": 295,
-        "t_des": 293,
+        "t_initial": 280,
         "wall_th": 0.1
     }
 }
 
-#-------------- Initialize simulation class object -----------------
+#-------------- Initialize simulation objects -----------------
 
 simulations_CH_2019 = {}
 scenario_output = {}
@@ -128,6 +124,7 @@ for house_name, params in house_params.items():
     simulations_CH_2019[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600, scenario_Switzerland)
     comparison[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600)
 
+
 #------------ Perform calculations of sim object ------------------
     
 for house_type in comparison:
@@ -145,8 +142,9 @@ plots = Plot_output(scenario_output, PV_generation_2019_ZRH.return_PV_list())
 plots.plot_temperature_scenario(168)
 plots.plot_ac_demand()
 plots.plot_aggregated_ac_demand_over_years()
-plots.plot_base_case_with_PV()
-"""
+#plots.plot_base_case_with_PV()
+
+
 print(f'Total electricity needed for old MFH: {round(comparison_output['old_MFH'][4]) / 1e6} [MW]')
 print(f'Cooling needed for old MFH: {round(comparison_output['old_MFH'][2]) / 1e6} [MW]')
 print(f'Heating needed for old MFH: {round(comparison_output['old_MFH'][3]) / 1e6} [MW]\n')
@@ -162,4 +160,3 @@ print(f'Heating needed for modern MFH: {round(comparison_output['modern_MFH'][3]
 print(f'Total electricity needed for modern SFH: {round(comparison_output['modern_SFH'][4]) / 1e6} [MW]')
 print(f'Cooling needed for modern SFH: {round(comparison_output['modern_SFH'][2]) / 1e6} [MW]')
 print(f'Heating needed for modern SFH: {round(comparison_output['modern_SFH'][3]) / 1e6} [MW]\n')
-"""
