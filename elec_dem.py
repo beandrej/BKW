@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from House import House, RunSimulation, Plot_output, PV
-
 # ------------------ Global variables -----------
 
 hours_in_year = list(np.arange(0, 8761, 1))
@@ -21,275 +20,10 @@ PV_generation_2019_ZRH = PV("PV_data/PVoutput_2019.csv")
 
 # ------------- Define parameters of house types -----------
 
-house_params = {
-    "modern_SFH": {
-        "A_wall": 105,
-        "A_window": 17,
-        "A_floor": 89,
-        "U_wall": 0.2,
-        "U_window": 1.2,
-        "U_floor": 0.3,
-        "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.6,
-        "perc_s_windows": 0.35,
-        "people": 3,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "old_SFH": {
-        "A_wall": 105,
-        "A_window": 17,
-        "A_floor": 89,
-        "U_wall": 0.63,
-        "U_window": 2.7,
-        "U_floor": 1.2,
-        "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.35,
-        "people": 3,
-        "v_rate": 1.4,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "modern_MFH": {
-        "A_wall": 279,
-        "A_window": 80,
-        "A_floor": 252,
-        "U_wall": 0.2,
-        "U_window": 1.3,
-        "U_floor": 0.3,
-        "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 8000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.3,
-        "people": 10,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "old_MFH": {
-        "A_wall": 279,
-        "A_window": 80,
-        "A_floor": 252,
-        "U_wall": 0.8,
-        "U_window": 2.8,
-        "U_floor": 1.3,
-        "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.35,
-        "people": 10,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 280,
-        "wall_th": 0.1
-    }
-}
+from parameters import four_house_types, battery_vs_no_battery
 
-house_params_battery = {
-    "modern_SFH": {
-        "A_wall": 105,
-        "A_window": 17,
-        "A_floor": 89,
-        "U_wall": 0.2,
-        "U_window": 1.2,
-        "U_floor": 0.3,
-        "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.6,
-        "perc_s_windows": 0.35,
-        "people": 3,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "old_SFH": {
-        "A_wall": 105,
-        "A_window": 17,
-        "A_floor": 89,
-        "U_wall": 0.63,
-        "U_window": 2.7,
-        "U_floor": 1.2,
-        "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.35,
-        "people": 3,
-        "v_rate": 1.4,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "modern_MFH": {
-        "A_wall": 279,
-        "A_window": 80,
-        "A_floor": 252,
-        "U_wall": 0.2,
-        "U_window": 1.3,
-        "U_floor": 0.3,
-        "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 8000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.3,
-        "people": 10,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "old_MFH": {
-        "A_wall": 279,
-        "A_window": 80,
-        "A_floor": 252,
-        "U_wall": 0.8,
-        "U_window": 2.8,
-        "U_floor": 1.3,
-        "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.35,
-        "people": 10,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
-        "shade_factor": 0.7,
-        "t_initial": 280,
-        "wall_th": 0.1
-    },
-    "modern_SFH_noBattery": {
-        "A_wall": 105,
-        "A_window": 17,
-        "A_floor": 89,
-        "U_wall": 0.2,
-        "U_window": 1.2,
-        "U_floor": 0.3,
-        "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.6,
-        "perc_s_windows": 0.35,
-        "people": 3,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 0,
-        "battery_throughput": 0,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "old_SFH_noBattery": {
-        "A_wall": 105,
-        "A_window": 17,
-        "A_floor": 89,
-        "U_wall": 0.63,
-        "U_window": 2.7,
-        "U_floor": 1.2,
-        "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.35,
-        "people": 3,
-        "v_rate": 1.4,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 0,
-        "battery_throughput": 0,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "modern_MFH_noBattery": {
-        "A_wall": 279,
-        "A_window": 80,
-        "A_floor": 252,
-        "U_wall": 0.2,
-        "U_window": 1.3,
-        "U_floor": 0.3,
-        "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.3,
-        "people": 10,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 0,
-        "battery_throughput": 0,
-        "shade_factor": 0.7,
-        "t_initial": 295,
-        "wall_th": 0.1
-    },
-    "old_MFH_noBattery": {
-        "A_wall": 279,
-        "A_window": 80,
-        "A_floor": 252,
-        "U_wall": 0.8,
-        "U_window": 2.8,
-        "U_floor": 1.3,
-        "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
-        "shgc": 0.2,
-        "perc_s_windows": 0.35,
-        "people": 10,
-        "v_rate": 0.7,
-        "setpoint_ac": 295,
-        "setpoint_hp": 293,
-        "battery_cap": 0,
-        "battery_throughput": 0,
-        "shade_factor": 0.7,
-        "t_initial": 280,
-        "wall_th": 0.1
-    }
-}
+CH_HouseTypes = four_house_types
+CH_HousesBatteryComp = battery_vs_no_battery
 
 #-------------- Initialize simulation objects -----------------
 
@@ -308,12 +42,12 @@ scenario_Switzerland = {
 
 #-------------- Read house params and initialize sim object with << RunSimulation >> ------------
 
-for house_name, params in house_params.items():
+for house_name, params in CH_HouseTypes.items():
     house_obj = House(**params)
     simulations_CH_2019[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600, scenario_Switzerland)
     comparison[house_name] = RunSimulation(house_obj, T_outside_2019_ZRH, irr_2019_ZRH, 3600)
 
-for house, param in house_params_battery.items():
+for house, param in CH_HousesBatteryComp.items():
     house_obj_battery = House(**param)
     comparison_battery[house] = RunSimulation(house_obj_battery, T_outside_2019_ZRH, irr_2019_ZRH, 3600)
 #------------ Perform calculations of sim object ------------------
@@ -337,7 +71,7 @@ plot2 = Plot_output(comparison_output, PV_generation_2019_ZRH.return_PV_list())
 plot2.plot_cooling_with_batteries(111)
 plot2battery.bar_plot_battery_comparison()
 plot2.ac_consumption(111)
-plot2.plot_battery_flow(168)
+plot2.plot_battery_flow(24)
 plot2.plot_battery_soc(168)
 # plot2.plot_temp_compare(168)
 

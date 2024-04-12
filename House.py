@@ -31,7 +31,9 @@ def read_PV(path):
 
 pv_prod_list = read_PV('PV_data/PVoutput_2019.csv')
 
-
+def rolling_window(list, window):
+    df = pd.DataFrame(list, columns=['x'])
+    return df['x'].rolling(window=window).mean()
 
 class ACUnit: 
 
