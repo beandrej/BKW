@@ -1,4 +1,4 @@
-house_params = {
+four_house_types = {
     "modern_SFH": {
         "A_wall": 105,
         "A_window": 17,
@@ -89,7 +89,7 @@ house_params = {
     }
 }
 
-house_params_battery = {
+battery_vs_no_battery = {
     "modern_SFH": {
         "A_wall": 105,
         "A_window": 17,
