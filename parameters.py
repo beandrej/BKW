@@ -1,4 +1,21 @@
-four_house_types = {
+
+# --------- Define house parameters -----------
+
+AC_CAPACITY_SFH = 4000 # Air conditioner capacity for Single familiy house (SFH) [W]
+AC_CAPACITY_MFH = 6000 # Air conditioner capacity for Multi familiy house (MFH) [W]
+
+HP_CAPACITY_SFH = 4000 # Heat pump capacity for Single familiy house (SFH) [W]
+HP_CAPACITY_MFH = 8000 # Heat pump capacity for Multi familiy house (MFH) [W]
+
+BATTERY_STORAGE_SFH = 10000 # Battery storage for Single family house (SFH) [Wh]
+BATTERY_STORAGE_MFH = 15000 # Battery storage for Multi family house (MFH) [Wh]
+
+BATTERY_THROUGHPUT_SFH = 2000 # Battery throughput for Single family house (SFH) [W]
+BATTERY_THROUGHPUT_MFH = 3000 # Battery throughput for Multi family house (MFH) [W]
+
+
+
+CH_HOUSE_TYPES = {
     "modern_SFH": {
         "A_wall": 105,
         "A_window": 17,
@@ -7,16 +24,16 @@ four_house_types = {
         "U_window": 1.2,
         "U_floor": 0.3,
         "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
         "shgc": 0.6,
         "perc_s_windows": 0.35,
         "people": 3,
         "v_rate": 0.7,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": 0.7,
         "t_initial": 295,
         "wall_th": 0.1
@@ -29,16 +46,16 @@ four_house_types = {
         "U_window": 2.7,
         "U_floor": 1.2,
         "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
         "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 3,
         "v_rate": 1.4,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": 0.7,
         "t_initial": 295,
         "wall_th": 0.1
@@ -51,16 +68,16 @@ four_house_types = {
         "U_window": 1.3,
         "U_floor": 0.3,
         "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 8000,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
         "shgc": 0.2,
         "perc_s_windows": 0.3,
         "people": 10,
         "v_rate": 0.7,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": 0.7,
         "t_initial": 295,
         "wall_th": 0.1
@@ -73,23 +90,23 @@ four_house_types = {
         "U_window": 2.8,
         "U_floor": 1.3,
         "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
         "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 10,
         "v_rate": 0.7,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": 0.7,
         "t_initial": 280,
         "wall_th": 0.1
     }
 }
 
-battery_vs_no_battery = {
+BATTERY_COMPARSION = {
     "modern_SFH": {
         "A_wall": 105,
         "A_window": 17,
@@ -98,16 +115,16 @@ battery_vs_no_battery = {
         "U_window": 1.2,
         "U_floor": 0.3,
         "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
         "shgc": 0.6,
         "perc_s_windows": 0.35,
         "people": 3,
         "v_rate": 0.7,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": 0.7,
         "t_initial": 295,
         "wall_th": 0.1
@@ -120,16 +137,16 @@ battery_vs_no_battery = {
         "U_window": 2.7,
         "U_floor": 1.2,
         "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
         "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 3,
         "v_rate": 1.4,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": 0.7,
         "t_initial": 295,
         "wall_th": 0.1
@@ -142,16 +159,16 @@ battery_vs_no_battery = {
         "U_window": 1.3,
         "U_floor": 0.3,
         "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 8000,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
         "shgc": 0.2,
         "perc_s_windows": 0.3,
         "people": 10,
         "v_rate": 0.7,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": 0.7,
         "t_initial": 295,
         "wall_th": 0.1
@@ -164,21 +181,21 @@ battery_vs_no_battery = {
         "U_window": 2.8,
         "U_floor": 1.3,
         "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
         "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 10,
         "v_rate": 0.7,
         "setpoint_ac": 295,
         "setpoint_hp": 293,
-        "battery_cap": 10000,
-        "battery_throughput": 2000,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": 0.7,
         "t_initial": 280,
         "wall_th": 0.1
     },
-    "modern_SFH_noBattery": {
+    "modern_SFH_NB": {
         "A_wall": 105,
         "A_window": 17,
         "A_floor": 89,
@@ -186,8 +203,8 @@ battery_vs_no_battery = {
         "U_window": 1.2,
         "U_floor": 0.3,
         "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
         "shgc": 0.6,
         "perc_s_windows": 0.35,
         "people": 3,
@@ -200,7 +217,7 @@ battery_vs_no_battery = {
         "t_initial": 295,
         "wall_th": 0.1
     },
-    "old_SFH_noBattery": {
+    "old_SFH_NB": {
         "A_wall": 105,
         "A_window": 17,
         "A_floor": 89,
@@ -208,8 +225,8 @@ battery_vs_no_battery = {
         "U_window": 2.7,
         "U_floor": 1.2,
         "height": 5,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
         "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 3,
@@ -222,7 +239,7 @@ battery_vs_no_battery = {
         "t_initial": 295,
         "wall_th": 0.1
     },
-    "modern_MFH_noBattery": {
+    "modern_MFH_NB": {
         "A_wall": 279,
         "A_window": 80,
         "A_floor": 252,
@@ -230,8 +247,8 @@ battery_vs_no_battery = {
         "U_window": 1.3,
         "U_floor": 0.3,
         "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
         "shgc": 0.2,
         "perc_s_windows": 0.3,
         "people": 10,
@@ -244,7 +261,7 @@ battery_vs_no_battery = {
         "t_initial": 295,
         "wall_th": 0.1
     },
-    "old_MFH_noBattery": {
+    "old_MFH_NB": {
         "A_wall": 279,
         "A_window": 80,
         "A_floor": 252,
@@ -252,8 +269,8 @@ battery_vs_no_battery = {
         "U_window": 2.8,
         "U_floor": 1.3,
         "height": 10,
-        "cooling_cap": 4000,
-        "heating_cap": 4000,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
         "shgc": 0.2,
         "perc_s_windows": 0.35,
         "people": 10,
