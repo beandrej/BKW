@@ -128,7 +128,7 @@ class Battery:
         elif self.soc > self.capacity: # if battery got "overcharged", set to max capacity
             self.flow = self.capacity - previous_soc
             self.soc = self.capacity
-
+        
         else: # battery is full
             self.soc = self.capacity
             self.flow = 0
@@ -164,9 +164,9 @@ class House:
         A_wall, # Wall area [m2]
         A_window, # Window area [m2]
         A_floor, # Floor area [m2]
-        U_wall, # Wall resistance [W/(m^2*K)]
-        U_window, # Window resistance [W/(m^2*K)]
-        U_floor, # Floor resistance [W/(m^2*K)]
+        U_wall, # Wall resistance [W/(m2*K)]
+        U_window, # Window resistance [W/(m2*K)]
+        U_floor, # Floor resistance [W/(m2*K)]
         height, # Heigh [m2]
         cooling_cap, # AC capacity
         heating_cap, # HP capacity
@@ -446,7 +446,30 @@ class Plot_output:
         plt.title("Evolution of Cooling Demand")
         plt.show()
 
-    def bar_plot_battery_comparison(self):
+    def bar_plot_ac_consumption(self):
+
+        categories = ['Cooling demand']
+        houses = list(self.output.keys())
+        bar_width = 0.15
+        index = np.arange(len(categories))
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        for i, house in enumerate(houses):
+            data = [sum(self.output[house][1]) / (1e3 * 3.5)]
+            ax.bar(index + i * bar_width, data, bar_width, label=house)
+
+        ax.set_xlabel('House Types')
+        ax.set_ylabel('Cooling demand [kWh]')
+        ax.set_title('Aggregated Cooling Demand')
+        ax.set_xticks(index + bar_width * (len(houses) - 1) / 2)
+        ax.set_xticklabels(categories)
+        ax.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    def bar_plot_net_demand(self):
 
         categories = ['Net Demand']
         houses = list(self.output.keys())
@@ -456,11 +479,11 @@ class Plot_output:
         fig, ax = plt.subplots(figsize=(10, 6))
 
         for i, house in enumerate(houses):
-            data = [sum(self.output[house][4]) / 1e6]
+            data = [sum(self.output[house][4]) / (1e3 * 3.5)]
             ax.bar(index + i * bar_width, data, bar_width, label=house)
 
         ax.set_xlabel('House Types')
-        ax.set_ylabel('Net Cooling Demand [MW]')
+        ax.set_ylabel('Net Cooling Demand [kWh]')
         ax.set_title('Aggregated Net Cooling Demand')
         ax.set_xticks(index + bar_width * (len(houses) - 1) / 2)
         ax.set_xticklabels(categories)
@@ -468,7 +491,7 @@ class Plot_output:
 
         plt.tight_layout()
         plt.show()
-
+    
 #pv input
 class PV:
     def __init__(self, path):

@@ -1,73 +1,122 @@
 import pandas as pd
 import numpy as np
-from numpy import array
 import matplotlib.pyplot as plt
 from House import House, RunSimulation, Plot_output, PV
-from parameters import SETPOINT_AC, SETPOINT_HP
 
 # ------------------ Data import -----------------
 
-T_2019_ZRH_file_path = r"ren_ninja/ZRH_2019_t2m.csv"
-irr_2019_ZRH_file_path = r"ren_ninja/ninja_weather_47.3744_8.5410_uncorrected.csv"
-T_2019_ZRH_csv = pd.read_csv(T_2019_ZRH_file_path, delimiter=",", header=3)["t2m"].tolist()
+T2M_2019_ZRH = pd.read_csv(r"ren_ninja/CHE/T2M_2019_ZRH.csv", delimiter=",", header=3)["t2m"].tolist()
+T2M_2019_MAD = pd.read_csv(r"ren_ninja/ESP/T2M_2019_MAD.csv", delimiter=",", header=3)["t2m"].tolist()
+T2M_2019_BAR = pd.read_csv(r"ren_ninja/ESP/T2M_2019_BAR.csv", delimiter=",", header=3)["t2m"].tolist()
+T2M_2019_STO = pd.read_csv(r"ren_ninja/SWE/T2M_2019_STO.csv", delimiter=",", header=3)["t2m"].tolist()
+T2M_2019_SOF = pd.read_csv(r"ren_ninja/BUL/T2M_2019_SOF.csv", delimiter=",", header=3)["t2m"].tolist()
 
-T_OUTSIDE_2019_ZRH = [temp + 273.15 for temp in T_2019_ZRH_csv] # convert to kelvin
-IRRADIATION_2019_ZRH = pd.read_csv(irr_2019_ZRH_file_path, delimiter=",", header=3)["swgdn"].tolist()
+IRRADIATION_2019_ZRH = pd.read_csv(r"ren_ninja/CHE/IRR_2019_ZRH.csv", delimiter=",", header=3)["swgdn"].tolist()
+IRRADIATION_2019_MAD = pd.read_csv(r"ren_ninja/ESP/IRR_2019_MAD.csv", delimiter=",", header=3)["swgdn"].tolist()
+IRRADIATION_2019_BAR = pd.read_csv(r"ren_ninja/ESP/IRR_2019_BAR.csv", delimiter=",", header=3)["swgdn"].tolist()
+IRRADIATION_2019_STO = pd.read_csv(r"ren_ninja/SWE/IRR_2019_STO.csv", delimiter=",", header=3)["swgdn"].tolist()
+IRRADIATION_2019_SOF = pd.read_csv(r"ren_ninja/BUL/IRR_2019_SOF.csv", delimiter=",", header=3)["swgdn"].tolist()
+
+# convert to kelvin
+T_OUTSIDE_2019_ZRH = [temp + 273.15 for temp in T2M_2019_ZRH]
+T_OUTSIDE_2019_MAD = [temp + 273.15 for temp in T2M_2019_MAD]
+T_OUTSIDE_2019_BAR = [temp + 273.15 for temp in T2M_2019_BAR]
+T_OUTSIDE_2019_STO = [temp + 273.15 for temp in T2M_2019_STO]
+T_OUTSIDE_2019_SOF = [temp + 273.15 for temp in T2M_2019_SOF]
+
 PV_GEN_2019_ZRH = PV("PV_data/PVoutput_2019.csv")
 
-# ------------- Define parameters of house types -----------
+# ------------- Import defined house parameters -----------
 
-from parameters import CH_HOUSE_TYPES, BATTERY_COMPARSION
+from parameters import CHE_HOUSE_TYPES, ESP_HOUSE_TYPES, SWE_HOUSE_TYPES, BUL_HOUSE_TYPES
+from parameters import CHE_HOUSE_TYPES_NO_BAT, ESP_HOUSE_TYPES_NO_BAT, SWE_HOUSE_TYPES_NO_BAT, BUL_HOUSE_TYPES_NO_BAT
+from parameters import SETPOINT_AC_CH, SETPOINT_HP_CH, SETPOINT_AC_ESP, SETPOINT_HP_ESP, SETPOINT_AC_SWE, SETPOINT_HP_SWE, SETPOINT_AC_BUL, SETPOINT_HP_BUL 
 
 #-------------- Initialize simulation objects -----------------
 
 simulations_CH_2019 = {}
 scenario_output = {}
-CH_HOUSE_SIMULATION = {}
-BATTERY_COMPARISON_SIMULATION = {}
-comparison_battery_output = {}
-comparison_output = {}
+CHE_HOUSE_SIMULATION = {}
+ESP_HOUSE_SIMULATION = {}
+SWE_HOUSE_SIMULATION = {}
+BUL_HOUSE_SIMULATION = {}
 
 scenario_Switzerland = {
     "years": ["2020", "2030", "2040", "2050"],
-    "temp_develop": [0, 0.5, 0.5, 0.5],
-}
+    "temp_develop": [0, 0.5, 0.5, 0.5]}
 
-#-------------- Read house params and initialize sim object with << RunSimulation >> ------------
+#-------------- Auxiliary functions ------------
 
-for house_name, params in CH_HOUSE_TYPES.items():
-    obj = House(**params)
-    simulations_CH_2019[house_name] = RunSimulation(obj, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600, scenario_Switzerland)
-    CH_HOUSE_SIMULATION[house_name] = RunSimulation(obj, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600)
+def simulate_country(house_types, t_outside, irradiation):
+    output = {}
+    for house, params in house_types.items():
+        output[house] = RunSimulation(House(**params), t_outside, irradiation, 3600).run()
+    return output
 
-for house, param in BATTERY_COMPARSION.items():
-    house_obj_battery = House(**param)
-    BATTERY_COMPARISON_SIMULATION[house] = RunSimulation(house_obj_battery, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600)
+def print_stats(output_dict, country):
+    for house, _ in output_dict.items():
+        print(f'{country}')
+        print("Statistic for:", house, '\n')
+        print(f'Average temperature inside {house}: {round(np.mean(output_dict[house][0]), 2)} [K]')
+        print(f'Electricity needed for cooling of {house}: {round(sum(output_dict[house][1]) / (3.5 * 1e3), 2)} [kWh]')
+        print(f'Electricity needed for heating of {house}: {round(sum(output_dict[house][5]) / (3.5 * 1e3), 2)} [kWh]')
+        print(f'Net Cooling Demand {house}: {round(sum(output_dict[house][4]) / (3.5 * 1e3), 2)} [kWh] \n')
+        print('\n')
 
 #------------ Perform calculations of sim object ------------------
 
-for house_type in CH_HOUSE_SIMULATION:
-    comparison_output[house_type] = CH_HOUSE_SIMULATION[house_type].run()
+CHE_HOUSE_SIMULATION = simulate_country(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH)
+ESP_HOUSE_SIMULATION = simulate_country(ESP_HOUSE_TYPES, T_OUTSIDE_2019_MAD, IRRADIATION_2019_MAD)
+SWE_HOUSE_SIMULATION = simulate_country(SWE_HOUSE_TYPES, T_OUTSIDE_2019_STO, IRRADIATION_2019_STO)
+BUL_HOUSE_SIMULATION = simulate_country(BUL_HOUSE_TYPES, T_OUTSIDE_2019_SOF, IRRADIATION_2019_SOF)
 
-# for house_type1 in comparison_battery:
-#     comparison_battery_output[house_type1] = comparison_battery[house_type1].run()
+print_stats(CHE_HOUSE_SIMULATION, 'SWITZERLAND')
+print_stats(ESP_HOUSE_SIMULATION, 'SPAIN')
+print_stats(SWE_HOUSE_SIMULATION, 'SWEDEN')
+print_stats(BUL_HOUSE_SIMULATION, 'BULGARIA')
 
+# TODO REWRITE SCENARIO
+# for house_name, params in CH_HOUSE_TYPES.items():
+#     simulations_CH_2019[house_name] = RunSimulation(House(**params), T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600, scenario_Switzerland)
+#     CH_HOUSE_SIMULATION[house_name] = RunSimulation(House(**params), T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600).run()
 
-#scenario_output = simulations_CH_2019["modern_MFH"].run_scenario()
+# scenario_output = simulations_CH_2019["modern_MFH"].run_scenario()
 
+#------------ Initialize plotting objects ----------------
 
-#------------ Plot resulting output ----------------
+#TODO generate PV_GEN for different countries
+CHE_PLOTS = Plot_output(CHE_HOUSE_SIMULATION, PV_GEN_2019_ZRH)
+ESP_PLOTS = Plot_output(ESP_HOUSE_SIMULATION, PV_GEN_2019_ZRH)
+SWE_PLOTS = Plot_output(SWE_HOUSE_SIMULATION, PV_GEN_2019_ZRH)
+BUL_PLOTS = Plot_output(BUL_HOUSE_SIMULATION, PV_GEN_2019_ZRH)
 
+CHE_PLOTS.plt_net_demand()
+CHE_PLOTS.plt_SOC_battery(168)
+CHE_PLOTS.plt_ac_consumption()
+CHE_PLOTS.plt_t_inside(168, SETPOINT_AC_CH, SETPOINT_HP_CH)
+CHE_PLOTS.bar_plot_ac_consumption()
+CHE_PLOTS.bar_plot_net_demand()
 
+ESP_PLOTS.plt_net_demand()
+ESP_PLOTS.plt_SOC_battery(168)
+ESP_PLOTS.plt_ac_consumption()
+ESP_PLOTS.plt_t_inside(168, SETPOINT_AC_ESP, SETPOINT_HP_ESP)
+ESP_PLOTS.bar_plot_ac_consumption()
+ESP_PLOTS.bar_plot_net_demand()
 
-#plot2battery = Plot_output(comparison_battery_output, PV_generation_2019_ZRH.return_PV_list())
+SWE_PLOTS.plt_net_demand()
+SWE_PLOTS.plt_SOC_battery(168)
+SWE_PLOTS.plt_ac_consumption()
+SWE_PLOTS.plt_t_inside(168, SETPOINT_AC_SWE, SETPOINT_HP_SWE)
+SWE_PLOTS.bar_plot_ac_consumption()
+SWE_PLOTS.bar_plot_net_demand()
 
-plot2 = Plot_output(comparison_output, PV_GEN_2019_ZRH)
-plot2.plt_net_demand()
-plot2.plt_SOC_battery(168)
-plot2.plt_ac_consumption()
-plot2.plt_t_inside(169, SETPOINT_AC, SETPOINT_HP)
-plot2.bar_plot_battery_comparison()
+BUL_PLOTS.plt_net_demand()
+BUL_PLOTS.plt_SOC_battery(168)
+BUL_PLOTS.plt_ac_consumption()
+BUL_PLOTS.plt_t_inside(168, SETPOINT_AC_BUL, SETPOINT_HP_BUL)
+BUL_PLOTS.bar_plot_ac_consumption()
+BUL_PLOTS.bar_plot_net_demand()
 
 # plots = Plot_output(scenario_output, PV_GEN_2019_ZRH)
 # plots.plot_temperature_scenario(168)
@@ -75,11 +124,11 @@ plot2.bar_plot_battery_comparison()
 # plots.plot_aggregated_ac_demand_over_years()
 # plots.plot_base_case_with_PV()
 
-print(f'Cooling needed for old MFH: {round(sum((comparison_output['old_MFH'][1])) / (3.5 * 1e3), 2)} [MWh]')
-print(f'Heating needed for old MFH: {round(sum(comparison_output['old_MFH'][5]) / (3.5 * 1e3), 2)} [MWh] \n')
+# print(f'Cooling needed for old MFH: {round(sum((comparison_output['old_MFH'][1])) / (3.5 * 1e3), 2)} [kWh]')
+# print(f'Heating needed for old MFH: {round(sum(comparison_output['old_MFH'][5]) / (3.5 * 1e3), 2)} [kWh] \n')
 
-print(f'Cooling needed for old SFH: {round(sum((comparison_output['old_SFH'][1])) / (3.5 * 1e3), 2)} [MWh]')
-print(f'Heating needed for old SFH: {round(sum(comparison_output['old_SFH'][5]) / (3.5 * 1e3), 2)} [MWh] \n')
+# print(f'Cooling needed for old SFH: {round(sum((comparison_output['old_SFH'][1])) / (3.5 * 1e3), 2)} [kWh]')
+# print(f'Heating needed for old SFH: {round(sum(comparison_output['old_SFH'][5]) / (3.5 * 1e3), 2)} [kWh] \n')
 
 # print(f'Total electricity with Battery for old SFH: {round(comparison_output['old_SFH'][6]) / 1e6} [MW]')
 # print(f'Cooling needed for old SFH: {round(comparison_output['old_SFH'][2]) / 1e6} [MW]')
