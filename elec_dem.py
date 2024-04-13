@@ -3,6 +3,7 @@ import numpy as np
 from numpy import array
 import matplotlib.pyplot as plt
 from House import House, RunSimulation, Plot_output, PV
+from parameters import SETPOINT_AC, SETPOINT_HP
 
 # ------------------ Data import -----------------
 
@@ -18,15 +19,12 @@ PV_GEN_2019_ZRH = PV("PV_data/PVoutput_2019.csv")
 
 from parameters import CH_HOUSE_TYPES, BATTERY_COMPARSION
 
-CH_HouseTypes = CH_HOUSE_TYPES
-CH_HousesBatteryComp = BATTERY_COMPARSION
-
 #-------------- Initialize simulation objects -----------------
 
 simulations_CH_2019 = {}
 scenario_output = {}
-comparison = {}
-comparison_battery = {}
+CH_HOUSE_SIMULATION = {}
+BATTERY_COMPARISON_SIMULATION = {}
 comparison_battery_output = {}
 comparison_output = {}
 
@@ -37,18 +35,19 @@ scenario_Switzerland = {
 
 #-------------- Read house params and initialize sim object with << RunSimulation >> ------------
 
-for house_name, params in CH_HouseTypes.items():
-    house_obj = House(**params)
-    simulations_CH_2019[house_name] = RunSimulation(house_obj, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600, scenario_Switzerland)
-    comparison[house_name] = RunSimulation(house_obj, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600)
+for house_name, params in CH_HOUSE_TYPES.items():
+    obj = House(**params)
+    simulations_CH_2019[house_name] = RunSimulation(obj, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600, scenario_Switzerland)
+    CH_HOUSE_SIMULATION[house_name] = RunSimulation(obj, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600)
 
-# for house, param in CH_HousesBatteryComp.items():
-#     house_obj_battery = House(**param)
-#     comparison_battery[house] = RunSimulation(house_obj_battery, T_outside_2019_ZRH, irr_2019_ZRH, 3600)
+for house, param in BATTERY_COMPARSION.items():
+    house_obj_battery = House(**param)
+    BATTERY_COMPARISON_SIMULATION[house] = RunSimulation(house_obj_battery, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600)
+
 #------------ Perform calculations of sim object ------------------
-    
-for house_type in comparison:
-    comparison_output[house_type] = comparison[house_type].run()
+
+for house_type in CH_HOUSE_SIMULATION:
+    comparison_output[house_type] = CH_HOUSE_SIMULATION[house_type].run()
 
 # for house_type1 in comparison_battery:
 #     comparison_battery_output[house_type1] = comparison_battery[house_type1].run()
@@ -62,26 +61,25 @@ for house_type in comparison:
 
 
 #plot2battery = Plot_output(comparison_battery_output, PV_generation_2019_ZRH.return_PV_list())
+
 plot2 = Plot_output(comparison_output, PV_GEN_2019_ZRH)
 plot2.plt_net_demand()
-plot2.plt_SOC_battery(24)
+plot2.plt_SOC_battery(168)
 plot2.plt_ac_consumption()
-plot2.plt_t_inside(169)
+plot2.plt_t_inside(169, SETPOINT_AC, SETPOINT_HP)
 plot2.bar_plot_battery_comparison()
-# plot2.ac_consumption(111)
-# plot2.plot_battery_flow(24)
-# plot2.plot_battery_soc(168)
-# plot2.plot_temp_compare(168)
-# plot2.plot_temp_compare(168)
 
-# plots = Plot_output(scenario_output, PV_generation_2019_ZRH.return_PV_list())
+# plots = Plot_output(scenario_output, PV_GEN_2019_ZRH)
 # plots.plot_temperature_scenario(168)
 # plots.plot_ac_demand()
 # plots.plot_aggregated_ac_demand_over_years()
-#plots.plot_base_case_with_PV()
+# plots.plot_base_case_with_PV()
 
-# print(f'Total electricity with Battery for old MFH: {round(comparison_output['old_MFH'][6]) / 1e6} [MW]')
-# print(f'Cooling needed for old MFH: {round(comparison_output['old_MFH'][2]) / 1e6} [MW]')
+print(f'Cooling needed for old MFH: {round(sum((comparison_output['old_MFH'][1])) / (3.5 * 1e3), 2)} [MWh]')
+print(f'Heating needed for old MFH: {round(sum(comparison_output['old_MFH'][5]) / (3.5 * 1e3), 2)} [MWh] \n')
+
+print(f'Cooling needed for old SFH: {round(sum((comparison_output['old_SFH'][1])) / (3.5 * 1e3), 2)} [MWh]')
+print(f'Heating needed for old SFH: {round(sum(comparison_output['old_SFH'][5]) / (3.5 * 1e3), 2)} [MWh] \n')
 
 # print(f'Total electricity with Battery for old SFH: {round(comparison_output['old_SFH'][6]) / 1e6} [MW]')
 # print(f'Cooling needed for old SFH: {round(comparison_output['old_SFH'][2]) / 1e6} [MW]')

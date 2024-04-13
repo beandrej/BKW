@@ -38,9 +38,7 @@ OPERATION_RANGE_AC = 0.2
 
 PV_PROD_LIST = read_PV('PV_data/PVoutput_2019.csv')
 
-
-
-class ACUnit: 
+class ACUnit:
 
     def __init__(self, power, setpoint, t_initial):
         self.setpoint = setpoint #desired temperature [K]
@@ -422,12 +420,13 @@ class Plot_output:
         plt.legend()
         plt.show()
 
-    def plt_t_inside(self, window):
+    def plt_t_inside(self, window, setpoint_ac, setpoint_hp):
         for house_type in self.output:
             t_inside = pd.DataFrame(self.output[house_type][0]).rolling(window=window).mean()
             plt.plot(DAYS_IN_YEAR, t_inside, label=str(house_type))
 
-        plt.axhline(y=self.t_des, color="r", linestyle="dotted", label="Desired Temperature")
+        plt.axhline(y=setpoint_ac, color="r", linestyle="dotted", label="AC threshold")
+        plt.axhline(y=setpoint_hp, color="b", linestyle="dotted", label="HP threshold")
         plt.xlabel("Time [days]")
         plt.ylabel("Temperature [K]")
         plt.title("Inside temperature of the house")
