@@ -38,8 +38,6 @@ OPERATION_RANGE_AC = 0.5
 
 PV_PROD_LIST = read_PV('PV_data/PVoutput_2019.csv')
 
-#TODO try modeling AC/HP so that it cools e.g. to 22°C -> turn off, only start cooling again if at 23°, there is 1° tolerance before reactivation 
-
 class ACUnit:
 
     def __init__(self, power, setpoint, t_initial):
@@ -47,7 +45,7 @@ class ACUnit:
         self.power = power # power [W]
         self.t_initial = t_initial # initial temp [K]
         self.COP = COP_AC # coefficient of performance
-
+        self.output = 0
         # linear increase range
         self.lowerbound = self.setpoint 
         self.upperbound = self.setpoint + OPERATION_RANGE_AC
@@ -61,15 +59,16 @@ class ACUnit:
         
     # Controller 0%, 50%, 80%, 100%   
     def control(self, t_in):
+
         if t_in > self.upperbound:
             self.output = 1 # 100%
         elif t_in < self.lowerbound:
             self.output = 0 # 0%
         else:  
             if (t_in - self.lowerbound) / (self.upperbound - self.lowerbound) >= 0.5: # when in upper 50% of temp range
-                self.output = 0.8 # set output to 80%
+                self.output = 0.6 # set output to 80%
             else:
-                self.output = 0.5 # set output to 50%
+                self.output = 0.2 # set output to 50%
         return self.output
 
     def is_on(self):

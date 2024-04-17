@@ -105,20 +105,20 @@ ESP_HOUSE_SIMULATION = simulate_country(ESP_HOUSE_TYPES, T_OUTSIDE_2019_MAD, IRR
 SWE_HOUSE_SIMULATION = simulate_country(SWE_HOUSE_TYPES, T_OUTSIDE_2019_STO, IRRADIATION_2019_STO)
 BUL_HOUSE_SIMULATION = simulate_country(BUL_HOUSE_TYPES, T_OUTSIDE_2019_SOF, IRRADIATION_2019_SOF)
 
-# print_stats(CHE_HOUSE_SIMULATION, 'SWITZERLAND')
+print_stats(CHE_HOUSE_SIMULATION, 'SWITZERLAND')
 # print_stats(ESP_HOUSE_SIMULATION, 'SPAIN')
 # print_stats(SWE_HOUSE_SIMULATION, 'SWEDEN')
 # print_stats(BUL_HOUSE_SIMULATION, 'BULGARIA')
 
 SCENARIO_CH_TEMP = simulate_uvalue_scenario(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, UVALUE_SCENARIO, "MFH before 2000")
 
-test = PlotScenario(SCENARIO_CH_TEMP, PV_GEN_2019_ZRH, "MFH before 2000")
-test.plt_t_inside(SETPOINT_AC_CH, SETPOINT_HP_CH)
-test.plt_scenario_net_demand()
-test.plt_scenario_battery_flow()
-test.plt_scenario_soc()
-test.plt_scenario_net_demand()
-test.plt_scenario_hp_demand()
+# test = PlotScenario(SCENARIO_CH_TEMP, PV_GEN_2019_ZRH, "MFH before 2000")
+# test.plt_t_inside(SETPOINT_AC_CH, SETPOINT_HP_CH)
+# test.plt_scenario_net_demand()
+# test.plt_scenario_battery_flow()
+# test.plt_scenario_soc()
+# test.plt_scenario_net_demand()
+# test.plt_scenario_hp_demand()
 #------------ Perform calculations of sim object ------------------
 
 
