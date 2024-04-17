@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from House import House, RunSimulation, Plot_output, PV
+from House import House, RunSimulation, PlotBaseCase, PlotScenario, PV
 
 # ------------------ Data import -----------------
 
@@ -29,28 +29,62 @@ PV_GEN_2019_ZRH = PV("PV_data/PVoutput_2019.csv")
 # ------------- Import defined house parameters -----------
 
 from parameters import CHE_HOUSE_TYPES, ESP_HOUSE_TYPES, SWE_HOUSE_TYPES, BUL_HOUSE_TYPES
-from parameters import CHE_HOUSE_TYPES_NO_BAT, ESP_HOUSE_TYPES_NO_BAT, SWE_HOUSE_TYPES_NO_BAT, BUL_HOUSE_TYPES_NO_BAT
 from parameters import SETPOINT_AC_CH, SETPOINT_HP_CH, SETPOINT_AC_ESP, SETPOINT_HP_ESP, SETPOINT_AC_SWE, SETPOINT_HP_SWE, SETPOINT_AC_BUL, SETPOINT_HP_BUL 
 
 #-------------- Initialize simulation objects -----------------
 
-simulations_CH_2019 = {}
-scenario_output = {}
+SCENARIO_CH_TEMP = {}
+
 CHE_HOUSE_SIMULATION = {}
 ESP_HOUSE_SIMULATION = {}
 SWE_HOUSE_SIMULATION = {}
 BUL_HOUSE_SIMULATION = {}
 
-scenario_Switzerland = {
-    "years": ["2020", "2030", "2040", "2050"],
-    "temp_develop": [0, 0.5, 0.5, 0.5]}
+# -------------------- Define Scenarios ----------------------
 
+y_start = 2020  # Starting year
+y_end = 2050    # Ending year
+y_step = 5      # Calculate every X year
+t_inc = 0.05    # Yearly temperature increase
+
+y_range = range(y_start, y_end+1, y_step) 
+t_develop = [0] + [t_inc*y_step] * (len(y_range)-1)
+
+GLOBAL_TEMPERATURE_SCENARIO = {
+    "years": y_range,
+    "temp_develop": t_develop}
+
+uvalue_years = [1970, 2000, 2030]
+
+#TODO add SHGC
+UVALUE_SCENARIO = {
+    "years": uvalue_years,
+    "U_wall": [0.6, 0.4, 0.2],
+    "U_window": [2.7, 1.9, 1.2],
+    "U_floor": [1.2, 0.8, 0.3]
+}
 #-------------- Auxiliary functions ------------
 
 def simulate_country(house_types, t_outside, irradiation):
     output = {}
     for house, params in house_types.items():
-        output[house] = RunSimulation(House(**params), t_outside, irradiation, 3600).run()
+        output[house] = RunSimulation(House(**params), irradiation, 3600).run(t_outside)
+    return output
+
+def simulate_temp_scenario(house_types, t_outside, irradiation, scenario, specific_house):
+    output = {}
+    temp = {}
+    for house_types, params in house_types.items():
+        temp[house_types] = RunSimulation(House(**params), irradiation, 3600, scenario)
+    output = temp[specific_house].run_scenario_temp(t_outside)
+    return output
+
+def simulate_uvalue_scenario(house_types, t_outside, irradiation, scenario, specific_house):
+    output = {}
+    temp = {}
+    for house_types, params in house_types.items():
+        temp[house_types] = RunSimulation(House(**params), irradiation, 3600, scenario)
+    output = temp[specific_house].run_scenario_uvalue(t_outside)
     return output
 
 def print_stats(output_dict, country):
@@ -63,6 +97,7 @@ def print_stats(output_dict, country):
         print(f'Net Cooling Demand {house}: {round(sum(output_dict[house][4]) / (3.5 * 1e3), 2)} [kWh] \n')
         print('\n')
 
+
 #------------ Perform calculations of sim object ------------------
 
 CHE_HOUSE_SIMULATION = simulate_country(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH)
@@ -71,19 +106,25 @@ SWE_HOUSE_SIMULATION = simulate_country(SWE_HOUSE_TYPES, T_OUTSIDE_2019_STO, IRR
 BUL_HOUSE_SIMULATION = simulate_country(BUL_HOUSE_TYPES, T_OUTSIDE_2019_SOF, IRRADIATION_2019_SOF)
 
 print_stats(CHE_HOUSE_SIMULATION, 'SWITZERLAND')
-print_stats(ESP_HOUSE_SIMULATION, 'SPAIN')
-print_stats(SWE_HOUSE_SIMULATION, 'SWEDEN')
-print_stats(BUL_HOUSE_SIMULATION, 'BULGARIA')
+# print_stats(ESP_HOUSE_SIMULATION, 'SPAIN')
+# print_stats(SWE_HOUSE_SIMULATION, 'SWEDEN')
+# print_stats(BUL_HOUSE_SIMULATION, 'BULGARIA')
 
-# TODO REWRITE SCENARIO
-# for house_name, params in CH_HOUSE_TYPES.items():
-#     simulations_CH_2019[house_name] = RunSimulation(House(**params), T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600, scenario_Switzerland)
-#     CH_HOUSE_SIMULATION[house_name] = RunSimulation(House(**params), T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, 3600).run()
+SCENARIO_CH_TEMP = simulate_uvalue_scenario(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, UVALUE_SCENARIO, "MFH before 2000")
 
-# scenario_output = simulations_CH_2019["modern_MFH"].run_scenario()
+# test = PlotScenario(SCENARIO_CH_TEMP, PV_GEN_2019_ZRH, "MFH before 2000")
+# test.plt_t_inside(SETPOINT_AC_CH, SETPOINT_HP_CH)
+# test.plt_scenario_net_demand()
+# test.plt_scenario_battery_flow()
+# test.plt_scenario_soc()
+# test.plt_scenario_net_demand()
+# test.plt_scenario_hp_demand()
+#------------ Perform calculations of sim object ------------------
+
+
 
 #------------ Initialize plotting objects ----------------
-
+"""
 #TODO generate PV_GEN for different countries
 CHE_PLOTS = Plot_output(CHE_HOUSE_SIMULATION, PV_GEN_2019_ZRH)
 ESP_PLOTS = Plot_output(ESP_HOUSE_SIMULATION, PV_GEN_2019_ZRH)
@@ -139,5 +180,5 @@ BUL_PLOTS.bar_plot_net_demand()
 # print(f'Total electricity with Battery for modern SFH: {round(comparison_output['modern_SFH'][6]) / 1e6} [MW]')
 # print(f'Cooling needed for modern SFH: {round(comparison_output['modern_SFH'][2]) / 1e6} [MW]')
 
-
+"""
 

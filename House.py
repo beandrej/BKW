@@ -31,8 +31,8 @@ COP_AC = 3.5
 COP_HP = 3.5
 
 # increase of control in temperature range [K]
-OPERATION_RANGE_HP = 0.2
-OPERATION_RANGE_AC = 0.2
+OPERATION_RANGE_HP = 0.5
+OPERATION_RANGE_AC = 0.5
 
 # ----------------- PV Data -------------------------
 
@@ -45,7 +45,7 @@ class ACUnit:
         self.power = power # power [W]
         self.t_initial = t_initial # initial temp [K]
         self.COP = COP_AC # coefficient of performance
-
+        self.output = 0
         # linear increase range
         self.lowerbound = self.setpoint 
         self.upperbound = self.setpoint + OPERATION_RANGE_AC
@@ -59,15 +59,16 @@ class ACUnit:
         
     # Controller 0%, 50%, 80%, 100%   
     def control(self, t_in):
+
         if t_in > self.upperbound:
             self.output = 1 # 100%
         elif t_in < self.lowerbound:
             self.output = 0 # 0%
         else:  
             if (t_in - self.lowerbound) / (self.upperbound - self.lowerbound) >= 0.5: # when in upper 50% of temp range
-                self.output = 0.8 # set output to 80%
+                self.output = 0.6 # set output to 80%
             else:
-                self.output = 0.5 # set output to 50%
+                self.output = 0.2 # set output to 50%
         return self.output
 
     def is_on(self):
@@ -237,15 +238,14 @@ class House:
     
 class RunSimulation:
 
-    def __init__(self, house, t_outside, irr_list, timestep, scenario={}):
+    def __init__(self, house, irr_list, timestep, scenario={}):
         self.house = house
-        self.t_outside = t_outside
         self.irr_list = irr_list
         self.timestep = timestep
         self.scenario = scenario
 
     # smoothing outside temperature #TODO function isn't working properly (different outputs for same house)
-    def temperature_smoothing(self):
+    def temperature_smoothing(self, t_outside):
         #split temperature data into days
         T_days = np.split(self.t_outside, range(24, 8760, 24))
         #take the average of each day
@@ -265,7 +265,7 @@ class RunSimulation:
         #print(self.t_outside)
 
     # main calculation
-    def run(self):
+    def run(self, t_outside):
         AC_consumption = [self.house.ac.init_ac() * self.house.cooling_cap]
         HP_consumption = [self.house.hp.init_hp() * self.house.cooling_cap]
         net_demand = [0]
@@ -277,7 +277,7 @@ class RunSimulation:
         #smooth temperature to consider the inertia of the house
         #self.temperature_smoothing()
 
-        for idx, t in enumerate(self.t_outside):
+        for idx, t in enumerate(t_outside):
             t_next = t_inside[idx] + self.house.get_t_diff(
                 self.timestep, t, t_inside[idx], self.irr_list[idx]
             )
@@ -330,33 +330,47 @@ class RunSimulation:
         return t_inside, AC_consumption, SOC_battery, flow_battery, net_demand, HP_consumption
 
     # run screnarios for future years
-    def run_scenario(self):
+    def run_scenario_temp(self, t_outside):
         years = self.scenario["years"]
         increase_temp = self.scenario["temp_develop"]
         output_dictionary = {}
         for idx, year in enumerate(years):
-            self.t_outside = [t + increase_temp[idx] for t in self.t_outside] # abs T increase
-            output_dictionary[year] = self.run()
+            t_outside = [t + increase_temp[idx] for t in t_outside] # abs T increase
+            output_dictionary[year] = self.run(t_outside)
         return output_dictionary
+
+    
+    def run_scenario_uvalue(self, t_outside):
+        years = self.scenario["years"]
+        output_dictionary = {}
+        for idx, year in enumerate(years):
+            self.house.U_wall = self.scenario["U_wall"][idx]
+            self.house.U_window = self.scenario["U_window"][idx]
+            self.house.U_floor = self.scenario["U_floor"][idx]
+            output_dictionary[years[idx]] = self.run(t_outside)
+        return output_dictionary
+
 
 
 # plot class, define different plots
 
-class Plot_output:
+class PlotBaseCase:
 
     def __init__(self, output_dictionary, PV_output, t_des=295):
         self.output = output_dictionary
         self.t_des = t_des
         self.PV_output = PV_output
-
-    def plt_net_demand(self):
+    
+    def plt_t_inside(self, window, setpoint_ac, setpoint_hp):
         for house_type in self.output:
-            net_demand = self.output[house_type][4]
-            plt.plot(DAYS_IN_YEAR, net_demand, label=str(house_type))
+            t_inside = pd.DataFrame(self.output[house_type][0]).rolling(window=window).mean()
+            plt.plot(DAYS_IN_YEAR, t_inside, label=str(house_type))
 
+        plt.axhline(y=setpoint_ac, color="r", linestyle="dotted", label="AC threshold")
+        plt.axhline(y=setpoint_hp, color="b", linestyle="dotted", label="HP threshold")
         plt.xlabel("Time [days]")
-        plt.ylabel("Net Cooling Demand [Wh]")
-        plt.title("Net cooling demand with batteries installed")
+        plt.ylabel("Temperature [K]")
+        plt.title("Inside temperature of the house")
         plt.legend()
         plt.show()
 
@@ -371,17 +385,6 @@ class Plot_output:
         plt.legend()
         plt.show()
 
-    def plt_flow_battery(self, window):
-        for house_type in self.output:
-            flow_battery = pd.DataFrame(self.output[house_type][3]).rolling(window=window).mean()
-            plt.plot(DAYS_IN_YEAR, flow_battery, label=str(house_type))
-
-        plt.xlabel("Time [days]")
-        plt.ylabel("Battery flow [W]")
-        plt.title("Flows in/out of battery")
-        plt.legend()
-        plt.show()
-
     def plt_SOC_battery(self, window):
         for house_type in self.output:
             soc_battery = pd.DataFrame(self.output[house_type][2]).rolling(window=window).mean()
@@ -393,60 +396,58 @@ class Plot_output:
         plt.legend()
         plt.show()
 
-    def plot_base_case_with_PV(self):
-        years = list(self.output.keys())
-        net_demand = [a - b for a, b in zip(self.output[years[0]][1], self.PV_output)]
-        plt.plot(DAYS_IN_YEAR, net_demand)
-        plt.xlabel("Days in year")
-        plt.ylabel("Net Demand [W]")
-        plt.title("Net Demand")
-        plt.show()
-
-    def plot_temperature_scenario(self, window):
-        for year in self.output:
-            days_df = pd.DataFrame(DAYS_IN_YEAR, columns=['hours'])
-            temp_df = pd.DataFrame(self.output[year][0], columns=['temp'])
-            roll_days = days_df['hours'].rolling(window=window).mean()
-            roll_temp = temp_df['temp'].rolling(window=window).mean()
-            plt.plot(
-                roll_days,
-                roll_temp,
-                label="MFH after 2000 " + str(year),
-            )
-        plt.axhline(y=self.t_des, color="r", linestyle="dotted", label="T_desired")
-        plt.xlabel("Days in year")
-        plt.ylabel("Temperature [K]")
-        plt.title("Inside temperature of the house")
-        plt.legend()
-        plt.show()
-
-    def plt_t_inside(self, window, setpoint_ac, setpoint_hp):
+    def plt_flow_battery(self, window):
         for house_type in self.output:
-            t_inside = pd.DataFrame(self.output[house_type][0]).rolling(window=window).mean()
-            plt.plot(DAYS_IN_YEAR, t_inside, label=str(house_type))
+            flow_battery = pd.DataFrame(self.output[house_type][3]).rolling(window=window).mean()
+            plt.plot(DAYS_IN_YEAR, flow_battery, label=str(house_type))
 
-        plt.axhline(y=setpoint_ac, color="r", linestyle="dotted", label="AC threshold")
-        plt.axhline(y=setpoint_hp, color="b", linestyle="dotted", label="HP threshold")
         plt.xlabel("Time [days]")
-        plt.ylabel("Temperature [K]")
-        plt.title("Inside temperature of the house")
+        plt.ylabel("Battery flow [W]")
+        plt.title("Flows in/out of battery")
         plt.legend()
         plt.show()
 
-    def plot_aggregated_ac_demand_over_years(self):
-        total_demand_list = []
-        years = []
-        for year in self.output:
-            total_demand_list += [self.output[year][2]]
-            years += [int(year)]
+    def plt_net_demand(self):
+        for house_type in self.output:
+            net_demand = self.output[house_type][4]
+            plt.plot(DAYS_IN_YEAR, net_demand, label=str(house_type))
 
-        plt.plot(years, total_demand_list)
-        plt.xlabel("Year")
-        plt.ylabel("Aggregated Demand")
-        plt.title("Evolution of Cooling Demand")
+        plt.xlabel("Time [days]")
+        plt.ylabel("Net Cooling Demand [Wh]")
+        plt.title("Net cooling demand with batteries installed")
+        plt.legend()
         plt.show()
 
-    def bar_plot_ac_consumption(self):
+    def plt_hp_consumption(self):
+        for house_type in self.output:
+            hp_consumption = self.output[house_type][5]
+            plt.plot(DAYS_IN_YEAR, hp_consumption, label=str(house_type))
+
+        plt.xlabel("Time [days]")
+        plt.ylabel("HP consumption [Wh]")
+        plt.title("Heat Pump electricity consumption")
+        plt.legend()
+        plt.show()
+
+    # def plot_temperature_scenario(self, window):
+    #     for year in self.output:
+    #         days_df = pd.DataFrame(DAYS_IN_YEAR, columns=['hours'])
+    #         temp_df = pd.DataFrame(self.output[year][0], columns=['temp'])
+    #         roll_days = days_df['hours'].rolling(window=window).mean()
+    #         roll_temp = temp_df['temp'].rolling(window=window).mean()
+    #         plt.plot(
+    #             roll_days,
+    #             roll_temp,
+    #             label="MFH after 2000 " + str(year),
+    #         )
+    #     plt.axhline(y=self.t_des, color="r", linestyle="dotted", label="T_desired")
+    #     plt.xlabel("Days in year")
+    #     plt.ylabel("Temperature [K]")
+    #     plt.title("Inside temperature of the house")
+    #     plt.legend()
+    #     plt.show()
+
+    def bar_ac_consumption(self):
 
         categories = ['Cooling demand']
         houses = list(self.output.keys())
@@ -469,7 +470,30 @@ class Plot_output:
         plt.tight_layout()
         plt.show()
 
-    def bar_plot_net_demand(self):
+    def bar_hp_consumption(self):
+
+        categories = ['Heating demand']
+        houses = list(self.output.keys())
+        bar_width = 0.15
+        index = np.arange(len(categories))
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        for i, house in enumerate(houses):
+            data = [sum(self.output[house][1]) / (1e3 * 3.5)]
+            ax.bar(index + i * bar_width, data, bar_width, label=house)
+
+        ax.set_xlabel('House Types')
+        ax.set_ylabel('Heating demand [kWh]')
+        ax.set_title('Aggregated Cooling Demand')
+        ax.set_xticks(index + bar_width * (len(houses) - 1) / 2)
+        ax.set_xticklabels(categories)
+        ax.legend()
+
+        plt.tight_layout()
+        plt.show()        
+
+    def bar_net_demand(self):
 
         categories = ['Net Demand']
         houses = list(self.output.keys())
@@ -492,6 +516,85 @@ class Plot_output:
         plt.tight_layout()
         plt.show()
     
+
+class PlotScenario:
+    def __init__(self, output_dictionary, PV_output, specific_house, t_des=295):
+        self.output = output_dictionary
+        self.t_des = t_des
+        self.PV_output = PV_output
+        self.house = specific_house
+
+    def plt_t_inside(self, ac_set, hp_set):
+        for year in self.output:
+            t_inside = rolling_window(self.output[year][0], 168)
+            plt.plot(DAYS_IN_YEAR, t_inside, label=str(year))
+        
+        plt.axhline(y=ac_set, color="r", linestyle="dotted", label="AC threshold")
+        plt.axhline(y=hp_set, color="b", linestyle="dotted", label="HP threshold")
+        plt.xlabel("Year")
+        plt.ylabel("Inside temperature [K]")
+        plt.title(f'Evolution inside temperature for {self.house}')
+        plt.legend()
+        plt.show()
+
+    def plt_scenario_ac_demand(self):
+        agg_demand = []
+        for year in self.output:
+            agg_demand.append(sum(self.output[year][1])/1e6)
+
+        plt.plot(self.output.keys(), agg_demand)
+        plt.xlabel("Year")
+        plt.ylabel("Aggregated Demand [MWh]")
+        plt.title(f'Evolution of Cooling Demand for {self.house}')
+        plt.legend()
+        plt.show()
+
+    def plt_scenario_soc(self):
+        for year in self.output:
+            soc = rolling_window(self.output[year][2], 168)
+            plt.plot(DAYS_IN_YEAR, soc, label=str(year))
+
+        plt.xlabel("Year")
+        plt.ylabel("State of Charge [Wh]")
+        plt.title(f'Evolution SOC of Battery for {self.house}')
+        plt.legend()
+        plt.show()
+
+    def plt_scenario_battery_flow(self):
+        for year in self.output:
+            flow = rolling_window(self.output[year][3], 168)
+            plt.plot(DAYS_IN_YEAR, flow, label=str(year))
+
+        plt.xlabel("Year")
+        plt.ylabel("Battery flow [Wh]")
+        plt.title(f'Evolution Battery flow for {self.house}')
+        plt.legend()
+        plt.show()
+
+    def plt_scenario_net_demand(self):
+        agg_demand = []
+        for year in self.output:
+            agg_demand.append(sum(self.output[year][4])/1e3)
+
+        plt.plot(self.output.keys(), agg_demand)
+        plt.xlabel("Year")
+        plt.ylabel("Aggregated Demand [kWh]")
+        plt.title(f'Evolution of Cooling Demand for {self.house}')
+        plt.legend()
+        plt.show()
+
+    def plt_scenario_hp_demand(self):
+        agg_demand = []
+        for year in self.output:
+            agg_demand.append(sum(self.output[year][5])/1e6)
+
+        plt.plot(self.output.keys(), agg_demand)
+        plt.xlabel("Year")
+        plt.ylabel("Aggregated Demand [MWh]")
+        plt.title(f'Evolution of Heating Demand for {self.house}')
+        plt.legend()
+        plt.show()
+
 #pv input
 class PV:
     def __init__(self, path):
