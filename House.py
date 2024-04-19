@@ -57,7 +57,7 @@ class ACUnit:
         else:
             return 0
         
-    # Controller 0%, 50%, 80%, 100%   
+    # Controller 0%, 50%, 75%, 100%   
     def control(self, t_in):
 
         if t_in > self.upperbound:
@@ -66,9 +66,9 @@ class ACUnit:
             self.output = 0 # 0%
         else:  
             if (t_in - self.lowerbound) / (self.upperbound - self.lowerbound) >= 0.5: # when in upper 50% of temp range
-                self.output = 0.6 # set output to 80%
+                self.output = 0.75 # set output to 75%
             else:
-                self.output = 0.2 # set output to 50%
+                self.output = 0.5 # set output to 50%
         return self.output
 
     def is_on(self):
@@ -93,7 +93,7 @@ class HeatPump:
         else:
             return 1
 
-    # Controller 0%, 50%, 80%, 100%
+    # Controller 0%, 50%, 75%, 100%
     def control(self, t_in):
         if t_in < self.lowerbound:
             self.output = 1 # 100%
@@ -101,7 +101,7 @@ class HeatPump:
             self.output = 0 # 0%
         else:  
             if (t_in - self.lowerbound) / (self.upperbound - self.lowerbound) <= 0.5: # when in lower 50% of temp range
-                self.output = 0.8 # set output to 80%
+                self.output = 0.75 # set output to 75%
             else:
                 self.output = 0.5 # set output to 50%
         return self.output
@@ -347,6 +347,7 @@ class RunSimulation:
             self.house.U_wall = self.scenario["U_wall"][idx]
             self.house.U_window = self.scenario["U_window"][idx]
             self.house.U_floor = self.scenario["U_floor"][idx]
+            self.house.shgc = self.scenario["shgc"][idx]
             output_dictionary[years[idx]] = self.run(t_outside)
         return output_dictionary
 
