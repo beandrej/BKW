@@ -60,14 +60,14 @@ GLOBAL_TEMPERATURE_SCENARIO = {
     "years": y_range,
     "temp_develop": t_develop}
 
-uvalue_years = [1970, 2030]
+uvalue_years = [1970, 2000, 2030, 2050]
 
 CHE_UVALUE_SCENARIO = {
     "years": uvalue_years,
-    "U_wall": [0.6, 0.2],
-    "U_window": [2.7, 1.2],
-    "U_floor": [1.2, 0.3],
-    "shgc": [0.7, 0.2]
+    "U_wall": [0.6, 0.4, 0.2, 0.1],
+    "U_window": [2.7, 1.8, 1.2, 0.8],
+    "U_floor": [1.2, 0.7, 0.3, 0.2],
+    "shgc": [0.7, 0.45, 0.2, 0.15]
 }
 #-------------- Auxiliary functions ------------
 
