@@ -31,12 +31,10 @@ COP_AC = 3.5
 COP_HP = 3.5
 
 # increase of control in temperature range [K]
-OPERATION_RANGE_HP = 0.5
-OPERATION_RANGE_AC = 0.5
+OPERATION_RANGE_HP = 0
+OPERATION_RANGE_AC = 0
 
 # ----------------- PV Data -------------------------
-
-PV_PROD_LIST = read_PV('PV_data/PVoutput_2019.csv')
 
 class ACUnit:
 
@@ -238,11 +236,14 @@ class House:
     
 class RunSimulation:
 
-    def __init__(self, house, irr_list, timestep, scenario={}):
+    def __init__(self, house, irr_list, pv_prod, timestep, scenario={}):
         self.house = house
+        self.pv = [0.3*i*self.house.A_floor for i in pv_prod] # pv_prod is Wh/m2, and this is multiplied with the roof area, with factor of 0.3 so 30% of the roof is covered
         self.irr_list = irr_list
         self.timestep = timestep
         self.scenario = scenario
+
+        assert len(irr_list) == 8760 and len(pv_prod) == 8760 
 
     # smoothing outside temperature #TODO function isn't working properly (different outputs for same house)
     def temperature_smoothing(self, t_outside):
@@ -272,8 +273,8 @@ class RunSimulation:
         SOC_battery = [0]
         flow_battery = [0]
         t_inside = [self.house.t_initial]
-
-        
+        pv_prod = self.pv
+        overproduction_list = [0]
         #smooth temperature to consider the inertia of the house
         #self.temperature_smoothing()
 
@@ -287,7 +288,9 @@ class RunSimulation:
             AC_consumption.append(cooling_needed)
             heating_needed = self.house.heating_cap * self.house.hp.control(t_inside[idx])
             HP_consumption.append(heating_needed)
-            overproduction = PV_PROD_LIST[idx] - cooling_needed
+
+            overproduction = self.pv[idx] - cooling_needed
+            overproduction_list.append(overproduction)
 
             # Battery storage interacting with PV prodcution
             # Battery charge and discharge cycles
@@ -326,8 +329,9 @@ class RunSimulation:
         flow_battery.pop(0)
         net_demand.pop(0)
         HP_consumption.pop(0)
+        overproduction_list.pop(0)
 
-        return t_inside, AC_consumption, SOC_battery, flow_battery, net_demand, HP_consumption
+        return t_inside, AC_consumption, SOC_battery, flow_battery, net_demand, HP_consumption, pv_prod, overproduction_list
 
     # run screnarios for future years
     def run_scenario_temp(self, t_outside):
@@ -357,10 +361,23 @@ class RunSimulation:
 
 class PlotBaseCase:
 
-    def __init__(self, output_dictionary, PV_output, t_des=295):
+    def __init__(self, output_dictionary, t_des=295):
         self.output = output_dictionary
         self.t_des = t_des
-        self.PV_output = PV_output
+
+    def plt_supply_vs_demand(self, window):
+        for house_type in self.output:
+            demand = pd.DataFrame(self.output[house_type][1]).rolling(window=window).mean()
+            supply = pd.DataFrame(self.output[house_type][6]).rolling(window=window).mean()
+            difference = pd.DataFrame(self.output[house_type][7]).rolling(window=window).mean()
+            plt.plot(DAYS_IN_YEAR, demand, label='Cooling demand')
+            plt.plot(DAYS_IN_YEAR, supply, label='PV Production')
+            plt.plot(DAYS_IN_YEAR, difference, label='Overproduction')
+        plt.xlabel("Time [days]")
+        plt.ylabel("Supply and Demand profile [Wh]")
+        plt.title("Comparison between supply & demand")
+        plt.legend()
+        plt.show()
     
     def plt_t_inside(self, window, setpoint_ac, setpoint_hp):
         for house_type in self.output:
@@ -602,5 +619,5 @@ class PV:
         self.PV_data = pd.read_csv(path, header=None)
         self.PV_output = list(self.PV_data.iloc[:, 1])
 
-    def return_PV_list(self):
+    def get(self):
         return self.PV_output

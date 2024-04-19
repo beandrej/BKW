@@ -6,7 +6,7 @@ WALL_THICKNESS = 0.3 # Wall thickness [m]
 VENTILATON_RATE = 0.7 # Ventilation rate [1/h] (little impact)
 T_INITIAL = 295 # Initial Temperature inside the house [K]
 
-WINDOWS_SHADE_FACTOR = 0.7 # Shading factor of windows [0 to 1]
+WINDOWS_SHADE_FACTOR = 0.5 # Shading factor of windows [0 to 1]
 WINDOWS_FACING_SOUTH = 0.35 # Percentage of windows facing south [0 to 1]
 
 # ---------------- AC / HP / BATTERY ---------------------
@@ -59,8 +59,8 @@ U_WINDOW_OLD_CH = 2.7 # Window thermal resistance [W/(m2*K)]
 U_FLOOR_NEW_CH = 0.3 # Floor thermal resistance [W/(m2*K)]
 U_FLOOR_OLD_CH = 1.2 # Floor thermal resistance [W/(m2*K)]
 
-SETPOINT_AC_CH = 273 + 24
-SETPOINT_HP_CH = 273 + 18
+SETPOINT_AC_CH = 273 + 25
+SETPOINT_HP_CH = 273 + 17
 
 # --------------------------- SPAIN --------------------------------
 
@@ -74,7 +74,7 @@ U_FLOOR_NEW_ESP = 1.39 # Floor thermal resistance [W/(m2*K)]
 U_FLOOR_OLD_ESP = 1.96 # Floor thermal resistance [W/(m2*K)]
 
 SETPOINT_AC_ESP = 273 + 27
-SETPOINT_HP_ESP = 273 + 18
+SETPOINT_HP_ESP = 273 + 17
 
 # --------------------------- SWEDEN -------------------------------
 
@@ -87,8 +87,8 @@ U_WINDOW_OLD_SWE = 4.07 # Window thermal resistance [W/(m2*K)]
 U_FLOOR_NEW_SWE = 0.78 # Floor thermal resistance [W/(m2*K)]
 U_FLOOR_OLD_SWE = 0.79 # Floor thermal resistance [W/(m2*K)]
 
-SETPOINT_AC_SWE = 273 + 24
-SETPOINT_HP_SWE = 273 + 18
+SETPOINT_AC_SWE = 273 + 25
+SETPOINT_HP_SWE = 273 + 17
 
 # -------------------------- BULGARIA -----------------------------
 
@@ -101,10 +101,35 @@ U_WINDOW_OLD_BUL = 4.33 # Window thermal resistance [W/(m2*K)]
 U_FLOOR_NEW_BUL = 0.45 # Floor thermal resistance [W/(m2*K)]
 U_FLOOR_OLD_BUL = 1.39 # Floor thermal resistance [W/(m2*K)]
 
-SETPOINT_AC_BUL = 273 + 24
-SETPOINT_HP_BUL = 273 + 18
+SETPOINT_AC_BUL = 273 + 25
+SETPOINT_HP_BUL = 273 + 17
 
 # ------------------------------------------------------------------
+
+ONLY_MFH_BEFORE_2000_CHE = {
+    "MFH before 2000": {
+        "A_wall": AREA_WALL_MFH,
+        "A_window": AREA_WINDOW_MFH,
+        "A_floor": AREA_FLOOR_MFH,
+        "U_wall": U_WALL_OLD_ESP,
+        "U_window": U_WINDOW_OLD_ESP,
+        "U_floor": U_FLOOR_OLD_ESP,
+        "height": HEIGHT_MFH,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
+        "shgc": SINGLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_MFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_ESP,
+        "setpoint_hp": SETPOINT_HP_ESP,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    }
+}
 
 CHE_HOUSE_TYPES = {
     "SFH after 2000": {
