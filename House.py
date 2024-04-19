@@ -238,14 +238,16 @@ class House:
     
 class RunSimulation:
 
-    def __init__(self, house, irr_list, timestep, scenario={}):
+    def __init__(self, house, t_outside, irr_list, timestep, scenario={}):
+        self.t_outside = t_outside
         self.house = house
         self.irr_list = irr_list
         self.timestep = timestep
         self.scenario = scenario
 
     # smoothing outside temperature #TODO function isn't working properly (different outputs for same house)
-    def temperature_smoothing(self, t_outside):
+    def temperature_smoothing(self):
+        print(self.t_outside[:30])
         #split temperature data into days
         T_days = np.split(self.t_outside, range(24, 8760, 24))
         #take the average of each day
@@ -275,9 +277,9 @@ class RunSimulation:
 
         
         #smooth temperature to consider the inertia of the house
-        #self.temperature_smoothing()
+        self.temperature_smoothing()
 
-        for idx, t in enumerate(t_outside):
+        for idx, t in enumerate(self.t_outside):
             t_next = t_inside[idx] + self.house.get_t_diff(
                 self.timestep, t, t_inside[idx], self.irr_list[idx]
             )

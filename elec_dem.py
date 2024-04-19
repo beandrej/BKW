@@ -28,7 +28,7 @@ PV_GEN_2019_ZRH = PV("PV_data/PVoutput_2019.csv")
 
 # ------------- Import defined house parameters -----------
 
-from parameters import CHE_HOUSE_TYPES, ESP_HOUSE_TYPES, SWE_HOUSE_TYPES, BUL_HOUSE_TYPES
+from parameters import CHE_HOUSE_TYPES, ESP_HOUSE_TYPES, SWE_HOUSE_TYPES, BUL_HOUSE_TYPES, testest123
 from parameters import SETPOINT_AC_CH, SETPOINT_HP_CH, SETPOINT_AC_ESP, SETPOINT_HP_ESP, SETPOINT_AC_SWE, SETPOINT_HP_SWE, SETPOINT_AC_BUL, SETPOINT_HP_BUL 
 
 #-------------- Initialize simulation objects -----------------
@@ -68,14 +68,14 @@ UVALUE_SCENARIO = {
 def simulate_country(house_types, t_outside, irradiation):
     output = {}
     for house, params in house_types.items():
-        output[house] = RunSimulation(House(**params), irradiation, 3600).run(t_outside)
+        output[house] = RunSimulation(House(**params), t_outside, irradiation, 3600).run(t_outside)
     return output
 
 def simulate_temp_scenario(house_types, t_outside, irradiation, scenario, specific_house):
     output = {}
     temp = {}
     for house_types, params in house_types.items():
-        temp[house_types] = RunSimulation(House(**params), irradiation, 3600, scenario)
+        temp[house_types] = RunSimulation(House(**params), t_outside, irradiation, 3600, scenario)
     output = temp[specific_house].run_scenario_temp(t_outside)
     return output
 
@@ -100,10 +100,15 @@ def print_stats(output_dict, country):
 
 #------------ Perform calculations of sim object ------------------
 
-CHE_HOUSE_SIMULATION = simulate_country(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH)
-ESP_HOUSE_SIMULATION = simulate_country(ESP_HOUSE_TYPES, T_OUTSIDE_2019_MAD, IRRADIATION_2019_MAD)
-SWE_HOUSE_SIMULATION = simulate_country(SWE_HOUSE_TYPES, T_OUTSIDE_2019_STO, IRRADIATION_2019_STO)
-BUL_HOUSE_SIMULATION = simulate_country(BUL_HOUSE_TYPES, T_OUTSIDE_2019_SOF, IRRADIATION_2019_SOF)
+# CHE_HOUSE_SIMULATION = simulate_country(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH)
+# ESP_HOUSE_SIMULATION = simulate_country(ESP_HOUSE_TYPES, T_OUTSIDE_2019_MAD, IRRADIATION_2019_MAD)
+# SWE_HOUSE_SIMULATION = simulate_country(SWE_HOUSE_TYPES, T_OUTSIDE_2019_STO, IRRADIATION_2019_STO)
+# BUL_HOUSE_SIMULATION = simulate_country(BUL_HOUSE_TYPES, T_OUTSIDE_2019_SOF, IRRADIATION_2019_SOF)
+
+test123 = simulate_country(testest123, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH)
+test = PlotBaseCase(test123, PV_GEN_2019_ZRH)
+test.plt_t_inside(168, SETPOINT_AC_CH, SETPOINT_HP_CH)
+test.bar_ac_consumption()
 
 print_stats(CHE_HOUSE_SIMULATION, 'SWITZERLAND')
 # print_stats(ESP_HOUSE_SIMULATION, 'SPAIN')

@@ -17,11 +17,11 @@ AC_CAPACITY_MFH = 6000 # Air conditioner capacity for Multi family house (MFH) [
 HP_CAPACITY_SFH = 8000 # Heat pump capacity for Single family house (SFH) [W]
 HP_CAPACITY_MFH = 12000 # Heat pump capacity for Multi family house (MFH) [W]
 
-BATTERY_STORAGE_SFH = 10000 # Battery storage for Single family house (SFH) [Wh]
-BATTERY_STORAGE_MFH = 15000 # Battery storage for Multi family house (MFH) [Wh]
+BATTERY_STORAGE_SFH = 0 # Battery storage for Single family house (SFH) [Wh]
+BATTERY_STORAGE_MFH = 0 # Battery storage for Multi family house (MFH) [Wh]
 
-BATTERY_THROUGHPUT_SFH = 2000 # Battery throughput for Single family house (SFH) [W]
-BATTERY_THROUGHPUT_MFH = 3000 # Battery throughput for Multi family house (MFH) [W]
+BATTERY_THROUGHPUT_SFH = 0 # Battery throughput for Single family house (SFH) [W]
+BATTERY_THROUGHPUT_MFH = 0 # Battery throughput for Multi family house (MFH) [W]
 
 # ------------------- FIXED FOR SFH/MFH ----------------------
 
@@ -196,6 +196,186 @@ CHE_HOUSE_TYPES = {
         "wall_th": WALL_THICKNESS
     }
 }
+
+testest123 = {
+    "SFH after 2000": {
+        "A_wall": AREA_WALL_SFH,
+        "A_window": AREA_WINDOW_SFH,
+        "A_floor": AREA_FLOOR_SFH,
+        "U_wall": U_WALL_NEW_CH,
+        "U_window": U_WINDOW_NEW_CH,
+        "U_floor": U_FLOOR_NEW_CH,
+        "height": HEIGHT_SFH,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
+        "shgc": TRIPLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_SFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    },
+    "SFH before 2000": {
+        "A_wall": AREA_WALL_SFH,
+        "A_window": AREA_WINDOW_SFH,
+        "A_floor": AREA_FLOOR_SFH,
+        "U_wall": U_WALL_OLD_CH,
+        "U_window": U_WINDOW_OLD_CH,
+        "U_floor": U_FLOOR_OLD_CH,
+        "height": HEIGHT_SFH,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
+        "shgc": SINGLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_SFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    },
+    "MFH after 2000": {
+        "A_wall": AREA_WALL_MFH,
+        "A_window": AREA_WINDOW_MFH,
+        "A_floor": AREA_FLOOR_MFH,
+        "U_wall": U_WALL_NEW_CH,
+        "U_window": U_WINDOW_NEW_CH,
+        "U_floor": U_FLOOR_NEW_CH,
+        "height": HEIGHT_MFH,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
+        "shgc": TRIPLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_MFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    },
+    "MFH before 2000": {
+        "A_wall": AREA_WALL_MFH,
+        "A_window": AREA_WINDOW_MFH,
+        "A_floor": AREA_FLOOR_MFH,
+        "U_wall": U_WALL_OLD_CH,
+        "U_window": U_WINDOW_OLD_CH,
+        "U_floor": U_FLOOR_OLD_CH,
+        "height": HEIGHT_MFH,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
+        "shgc": SINGLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_MFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    },
+        "SFH after n 2000": {
+        "A_wall": AREA_WALL_SFH,
+        "A_window": AREA_WINDOW_SFH,
+        "A_floor": AREA_FLOOR_SFH,
+        "U_wall": U_WALL_NEW_CH,
+        "U_window": U_WINDOW_NEW_CH,
+        "U_floor": U_FLOOR_NEW_CH,
+        "height": HEIGHT_SFH,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
+        "shgc": TRIPLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_SFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    },
+    "SFH before n 2000": {
+        "A_wall": AREA_WALL_SFH,
+        "A_window": AREA_WINDOW_SFH,
+        "A_floor": AREA_FLOOR_SFH,
+        "U_wall": U_WALL_OLD_CH,
+        "U_window": U_WINDOW_OLD_CH,
+        "U_floor": U_FLOOR_OLD_CH,
+        "height": HEIGHT_SFH,
+        "cooling_cap": AC_CAPACITY_SFH,
+        "heating_cap": HP_CAPACITY_SFH,
+        "shgc": SINGLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_SFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_SFH,
+        "battery_throughput": BATTERY_THROUGHPUT_SFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    },
+    "MFH after n 2000": {
+        "A_wall": AREA_WALL_MFH,
+        "A_window": AREA_WINDOW_MFH,
+        "A_floor": AREA_FLOOR_MFH,
+        "U_wall": U_WALL_NEW_CH,
+        "U_window": U_WINDOW_NEW_CH,
+        "U_floor": U_FLOOR_NEW_CH,
+        "height": HEIGHT_MFH,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
+        "shgc": TRIPLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_MFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    },
+    "MFH before n 2000": {
+        "A_wall": AREA_WALL_MFH,
+        "A_window": AREA_WINDOW_MFH,
+        "A_floor": AREA_FLOOR_MFH,
+        "U_wall": U_WALL_OLD_CH,
+        "U_window": U_WINDOW_OLD_CH,
+        "U_floor": U_FLOOR_OLD_CH,
+        "height": HEIGHT_MFH,
+        "cooling_cap": AC_CAPACITY_MFH,
+        "heating_cap": HP_CAPACITY_MFH,
+        "shgc": SINGLE_GLAZED,
+        "perc_s_windows": WINDOWS_FACING_SOUTH,
+        "people": PEOPLE_MFH,
+        "v_rate": VENTILATON_RATE,
+        "setpoint_ac": SETPOINT_AC_CH,
+        "setpoint_hp": SETPOINT_HP_CH,
+        "battery_cap": BATTERY_STORAGE_MFH,
+        "battery_throughput": BATTERY_THROUGHPUT_MFH,
+        "shade_factor": WINDOWS_SHADE_FACTOR,
+        "t_initial": T_INITIAL,
+        "wall_th": WALL_THICKNESS
+    }
+}
+
 
 ESP_HOUSE_TYPES = {
     "SFH after 2000": {
