@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
-from numpy import array
 import matplotlib.pyplot as plt
 
 def read_PV(path):
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, header=None)
     data = df.iloc[:, 1].to_list()
     return data
 
@@ -12,6 +11,8 @@ def rolling_window(list, window):
     df = pd.DataFrame(list, columns=['x'])
     return df['x'].rolling(window=window).mean()
 
+def convolve(list, window):
+    return np.convolve(list, np.ones(window)/window, mode='same')
 # -------------- CONSTANTS -------------
 
 HEAT_CAPACITY_AIR = 1005 # [J/(kg*K)] 
@@ -177,6 +178,8 @@ class House:
         setpoint_hp, # Desired HP temp [K]
         battery_cap, # Battery capacity [Wh]
         battery_throughput, # Battery throughput [W]
+        pv_per_area, # PV Module output [W/m2]
+        pv_area,
         shade_factor=0.7,
         t_initial=295,
         wall_th=0.1,
@@ -206,12 +209,14 @@ class House:
         self.hp = HeatPump(heating_cap, self.setpoint_hp, self.t_initial)
         self.battery = Battery(self.battery_cap, self.battery_throughput)
         self.inertia = self.set_inertia()
+        self.pv_per_area = pv_per_area
+        self.pv_area = pv_area
 
     # calculate inertia of house
     def set_inertia(self):  # [J/K]
         air_term = CP_AIR * self.A_floor * self.height
-        cc_term = CP_CC * self.A_wall * self.wall_th
-        return air_term + cc_term
+        building_term = (2*self.A_floor + self.A_wall)*CP_CC*self.wall_th 
+        return air_term + building_term
 
     # calculate first part of heatgain
     def get_heatgain(self, t_out, t_in, solar_irr):  # [W], heat gain per timestep
@@ -236,14 +241,14 @@ class House:
     
 class RunSimulation:
 
-    def __init__(self, house, irr_list, pv_prod, timestep, scenario={}):
+    def __init__(self, house, irr_list, timestep, scenario={}):
         self.house = house
-        self.pv = [0.3*i*self.house.A_floor for i in pv_prod] # pv_prod is Wh/m2, and this is multiplied with the roof area, with factor of 0.3 so 30% of the roof is covered
+        self.pv_gen = [pv_per_area * self.house.pv_area for pv_per_area in self.house.pv_per_area]
+        #self.pv_gen =  = [0.3*i*self.house.A_floor for i in pv_prod] # pv_prod is Wh/m2, and this is multiplied with the roof area, with factor of 0.3 so 30% of the roof is covered
         self.irr_list = irr_list
         self.timestep = timestep
         self.scenario = scenario
-
-        assert len(irr_list) == 8760 and len(pv_prod) == 8760 
+        assert len(irr_list) == 8760 and len(self.pv_gen) == 8760 
 
     # smoothing outside temperature #TODO function isn't working properly (different outputs for same house)
     def temperature_smoothing(self, t_outside):
@@ -273,7 +278,7 @@ class RunSimulation:
         SOC_battery = [0]
         flow_battery = [0]
         t_inside = [self.house.t_initial]
-        pv_prod = self.pv
+        pv_gen = self.pv_gen
         overproduction_list = [0]
         #smooth temperature to consider the inertia of the house
         #self.temperature_smoothing()
@@ -289,7 +294,7 @@ class RunSimulation:
             heating_needed = self.house.heating_cap * self.house.hp.control(t_inside[idx])
             HP_consumption.append(heating_needed)
 
-            overproduction = self.pv[idx] - cooling_needed
+            overproduction = pv_gen[idx] - cooling_needed
             overproduction_list.append(overproduction)
 
             # Battery storage interacting with PV prodcution
@@ -331,7 +336,7 @@ class RunSimulation:
         HP_consumption.pop(0)
         overproduction_list.pop(0)
 
-        return t_inside, AC_consumption, SOC_battery, flow_battery, net_demand, HP_consumption, pv_prod, overproduction_list
+        return t_inside, AC_consumption, SOC_battery, flow_battery, net_demand, HP_consumption, pv_gen, overproduction_list
 
     # run screnarios for future years
     def run_scenario_temp(self, t_outside):
@@ -367,18 +372,49 @@ class PlotBaseCase:
 
     def plt_supply_vs_demand(self, window):
         for house_type in self.output:
-            demand = pd.DataFrame(self.output[house_type][1]).rolling(window=window).mean()
-            supply = pd.DataFrame(self.output[house_type][6]).rolling(window=window).mean()
-            difference = pd.DataFrame(self.output[house_type][7]).rolling(window=window).mean()
-            plt.plot(DAYS_IN_YEAR, demand, label='Cooling demand')
-            plt.plot(DAYS_IN_YEAR, supply, label='PV Production')
-            plt.plot(DAYS_IN_YEAR, difference, label='Overproduction')
+            # demand = pd.DataFrame(self.output[house_type][1]).rolling(window=window).mean()
+            # supply = pd.DataFrame(self.output[house_type][6]).rolling(window=window).mean()
+            # difference = pd.DataFrame(self.output[house_type][7]).rolling(window=window).mean()
+            # netto = pd.DataFrame(self.output[house_type][4]).rolling(window=window).mean()
+            
+            demand = convolve(self.output[house_type][1], window)
+            supply = convolve(self.output[house_type][6], window)
+            difference = convolve(self.output[house_type][7], window)
+            netto = convolve(self.output[house_type][4], window)
+            curves = [(DAYS_IN_YEAR, y) for y in sorted([demand, supply, difference, netto], key=lambda curve: curve.min())]
+
+            plt.plot(DAYS_IN_YEAR, demand, label='Cooling demand', color='b')
+            plt.plot(DAYS_IN_YEAR, supply, label='PV Production', color='orange', alpha=0.5)
+            plt.plot(DAYS_IN_YEAR, difference, label='Overproduction', color='orange', )
+            plt.plot(DAYS_IN_YEAR, netto, label='Net Cooling Demand', color='g')
         plt.xlabel("Time [days]")
         plt.ylabel("Supply and Demand profile [Wh]")
         plt.title("Comparison between supply & demand")
         plt.legend()
         plt.show()
     
+    def plt_supply_vs_demand2(self, window):
+        for house_type in self.output:
+            # demand = pd.DataFrame(self.output[house_type][1]).rolling(window=window).mean()
+            # supply = pd.DataFrame(self.output[house_type][6]).rolling(window=window).mean()
+            # difference = pd.DataFrame(self.output[house_type][7]).rolling(window=window).mean()
+            # netto = pd.DataFrame(self.output[house_type][4]).rolling(window=window).mean()
+            
+            demand = convolve(self.output[house_type][1], window)
+            supply = convolve(self.output[house_type][6], window)
+            difference = convolve(self.output[house_type][7], window)
+            netto = convolve(self.output[house_type][4], window)
+            curves = [(DAYS_IN_YEAR, y) for y in sorted([demand, supply, difference, netto], key=lambda curve: curve.min())]
+            
+        for i in range(len(curves) - 1):
+            plt.fill_between(curves[i][0], curves[i][1], curves[i+1][1], color='gray', alpha=0.3)
+
+        plt.xlabel("Time [days]")
+        plt.ylabel("Supply and Demand profile [Wh]")
+        plt.title("Comparison between supply & demand")
+        plt.legend()
+        plt.show()
+
     def plt_t_inside(self, window, setpoint_ac, setpoint_hp):
         for house_type in self.output:
             t_inside = pd.DataFrame(self.output[house_type][0]).rolling(window=window).mean()
@@ -536,10 +572,9 @@ class PlotBaseCase:
     
 
 class PlotScenario:
-    def __init__(self, output_dictionary, PV_output, specific_house, t_des=295):
+    def __init__(self, output_dictionary, specific_house, t_des=295):
         self.output = output_dictionary
         self.t_des = t_des
-        self.PV_output = PV_output
         self.house = specific_house
 
     def plt_t_inside(self, ac_set, hp_set):
@@ -614,10 +649,10 @@ class PlotScenario:
         plt.show()
 
 #pv input
-class PV:
-    def __init__(self, path):
-        self.PV_data = pd.read_csv(path, header=None)
-        self.PV_output = list(self.PV_data.iloc[:, 1])
+# class pvModule:
+#     def __init__(self, path):
+#         self.PV_data = pd.read_csv(path, header=None)
+#         self.PV_output = list(self.PV_data.iloc[:, 1])
 
-    def get(self):
-        return self.PV_output
+#     def get(self):
+#         return self.PV_output

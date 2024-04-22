@@ -1,4 +1,12 @@
+
+
+""" __________________________________________"""
+
 """ --------- SET HOUSE PARAMETERS ---------- """
+
+"""___________________________________________"""
+
+
 
 # ---------- SAME FOR ALL HOUSES -------------
 
@@ -46,7 +54,13 @@ SINGLE_GLAZED = 0.7 # Solar heat gain coefficient for single glazed windows [0 t
 DOUBLE_GLAZED = 0.45 # Solar heat gain coefficient for double glazed windows [0 to 1]
 TRIPLE_GLAZED = 0.2 # Solar heat gain coefficient fo triple glazed windows [0 to 1]
 
+
+"""_____________________________________________________________________"""
+
 """ -------------------- COUNTRY SPECIFIC VALUES ---------------------- """
+
+"""_____________________________________________________________________"""
+
 
 # -------------------------- SWITZERLAND ----------------------------
 
@@ -104,6 +118,27 @@ U_FLOOR_OLD_BUL = 1.39 # Floor thermal resistance [W/(m2*K)]
 SETPOINT_AC_BUL = 273 + 25
 SETPOINT_HP_BUL = 273 + 17
 
+"""___________________________________________"""
+
+""" --------------- READ PV ------------------"""
+
+"""___________________________________________"""
+
+
+from House import read_PV
+
+PV_2019_AT = read_PV("PV_data/Hourly_electricity_per_area_AT.csv")
+PV_2019_BU = read_PV("PV_data/Hourly_electricity_per_area_BU.csv")
+PV_2019_CH = read_PV("PV_data/Hourly_electricity_per_area_CH.csv")
+PV_2019_DE = read_PV("PV_data/Hourly_electricity_per_area_DE.csv")
+PV_2019_ES = read_PV("PV_data/Hourly_electricity_per_area_ES.csv")
+PV_2019_FR = read_PV("PV_data/Hourly_electricity_per_area_FR.csv")
+PV_2019_IT = read_PV("PV_data/Hourly_electricity_per_area_IT.csv")
+PV_2019_SW = read_PV("PV_data/Hourly_electricity_per_area_SW.csv")
+
+AREA_COVERED_BY_PV_SFH = 30
+AREA_COVERED_BY_PV_MFH = 90
+
 # ------------------------------------------------------------------
 
 ONLY_MFH_BEFORE_2000_CHE = {
@@ -127,7 +162,9 @@ ONLY_MFH_BEFORE_2000_CHE = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_CH,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     }
 }
 
@@ -152,7 +189,9 @@ CHE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_CH,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "SFH before 2000": {
         "A_wall": AREA_WALL_SFH,
@@ -174,7 +213,9 @@ CHE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_CH,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "MFH after 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -196,7 +237,9 @@ CHE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_CH,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     },
     "MFH before 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -218,7 +261,9 @@ CHE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_CH,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     }
 }
 
@@ -243,7 +288,9 @@ ESP_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_ES,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "SFH before 2000": {
         "A_wall": AREA_WALL_SFH,
@@ -265,7 +312,9 @@ ESP_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_ES,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "MFH after 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -287,7 +336,9 @@ ESP_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_ES,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     },
     "MFH before 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -309,7 +360,9 @@ ESP_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_ES,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     }
 }
 
@@ -334,7 +387,9 @@ SWE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_SW,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "SFH before 2000": {
         "A_wall": AREA_WALL_SFH,
@@ -356,7 +411,9 @@ SWE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_SW,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "MFH after 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -378,7 +435,9 @@ SWE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_SW,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     },
     "MFH before 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -400,7 +459,9 @@ SWE_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_SW,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     }
 }
 
@@ -425,7 +486,9 @@ BUL_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_BU,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "SFH before 2000": {
         "A_wall": AREA_WALL_SFH,
@@ -447,7 +510,9 @@ BUL_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_SFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_BU,
+        "pv_area": AREA_COVERED_BY_PV_SFH
     },
     "MFH after 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -469,7 +534,9 @@ BUL_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_BU,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     },
     "MFH before 2000": {
         "A_wall": AREA_WALL_MFH,
@@ -491,6 +558,8 @@ BUL_HOUSE_TYPES = {
         "battery_throughput": BATTERY_THROUGHPUT_MFH,
         "shade_factor": WINDOWS_SHADE_FACTOR,
         "t_initial": T_INITIAL,
-        "wall_th": WALL_THICKNESS
+        "wall_th": WALL_THICKNESS,
+        "pv_per_area": PV_2019_BU,
+        "pv_area": AREA_COVERED_BY_PV_MFH
     }
 }
