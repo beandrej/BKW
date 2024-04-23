@@ -347,7 +347,6 @@ class RunSimulation:
             t_outside = [t + increase_temp[idx] for t in t_outside] # abs T increase
             output_dictionary[year] = self.run(t_outside)
         return output_dictionary
-
     
     def run_scenario_uvalue(self, t_outside):
         years = self.scenario["years"]
@@ -360,8 +359,6 @@ class RunSimulation:
             output_dictionary[years[idx]] = self.run(t_outside)
         return output_dictionary
 
-
-
 # plot class, define different plots
 
 class PlotBaseCase:
@@ -372,49 +369,26 @@ class PlotBaseCase:
 
     def plt_supply_vs_demand(self, window):
         for house_type in self.output:
-            # demand = pd.DataFrame(self.output[house_type][1]).rolling(window=window).mean()
-            # supply = pd.DataFrame(self.output[house_type][6]).rolling(window=window).mean()
-            # difference = pd.DataFrame(self.output[house_type][7]).rolling(window=window).mean()
-            # netto = pd.DataFrame(self.output[house_type][4]).rolling(window=window).mean()
-            
+
             demand = convolve(self.output[house_type][1], window)
             supply = convolve(self.output[house_type][6], window)
             difference = convolve(self.output[house_type][7], window)
             netto = convolve(self.output[house_type][4], window)
-            curves = [(DAYS_IN_YEAR, y) for y in sorted([demand, supply, difference, netto], key=lambda curve: curve.min())]
+            heat = convolve(self.output[house_type][5], window)
+            #curves = [(DAYS_IN_YEAR, y) for y in sorted([demand, supply, difference, netto], key=lambda curve: curve.min())]
 
             plt.plot(DAYS_IN_YEAR, demand, label='Cooling demand', color='b')
-            plt.plot(DAYS_IN_YEAR, supply, label='PV Production', color='orange', alpha=0.5)
+            plt.plot(DAYS_IN_YEAR, supply, label='PV Production', color='orange', alpha=0.3)
             plt.plot(DAYS_IN_YEAR, difference, label='Overproduction', color='orange', )
             plt.plot(DAYS_IN_YEAR, netto, label='Net Cooling Demand', color='g')
+            plt.plot(DAYS_IN_YEAR, heat, label='Heat Demand', color='r', alpha=0.4)
+
         plt.xlabel("Time [days]")
         plt.ylabel("Supply and Demand profile [Wh]")
         plt.title("Comparison between supply & demand")
         plt.legend()
         plt.show()
     
-    def plt_supply_vs_demand2(self, window):
-        for house_type in self.output:
-            # demand = pd.DataFrame(self.output[house_type][1]).rolling(window=window).mean()
-            # supply = pd.DataFrame(self.output[house_type][6]).rolling(window=window).mean()
-            # difference = pd.DataFrame(self.output[house_type][7]).rolling(window=window).mean()
-            # netto = pd.DataFrame(self.output[house_type][4]).rolling(window=window).mean()
-            
-            demand = convolve(self.output[house_type][1], window)
-            supply = convolve(self.output[house_type][6], window)
-            difference = convolve(self.output[house_type][7], window)
-            netto = convolve(self.output[house_type][4], window)
-            curves = [(DAYS_IN_YEAR, y) for y in sorted([demand, supply, difference, netto], key=lambda curve: curve.min())]
-            
-        for i in range(len(curves) - 1):
-            plt.fill_between(curves[i][0], curves[i][1], curves[i+1][1], color='gray', alpha=0.3)
-
-        plt.xlabel("Time [days]")
-        plt.ylabel("Supply and Demand profile [Wh]")
-        plt.title("Comparison between supply & demand")
-        plt.legend()
-        plt.show()
-
     def plt_t_inside(self, window, setpoint_ac, setpoint_hp):
         for house_type in self.output:
             t_inside = pd.DataFrame(self.output[house_type][0]).rolling(window=window).mean()
