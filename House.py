@@ -255,28 +255,29 @@ class RunSimulation:
         self.scenario = scenario
         assert len(irr_list) == 8760 and len(self.pv_gen) == 8760 
 
-    # smoothing outside temperature #TODO function isn't working properly (different outputs for same house)
+    # smoothing outside temperature
     def temperature_smoothing(self, t_outside):
         #split temperature data into days
-        T_days = np.split(self.t_outside, range(24, 8760, 24))
+        T_days = np.split(t_outside, range(24, 8760, 24))
         #take the average of each day
         T_days_avg = [np.mean(day) for day in T_days]
         #indices
         idx = list(range(0, 8760, 24))
-        idx += [len(self.t_outside)+1]
+        idx += [len(t_outside)+1]
         for i,day in enumerate(T_days):
             if i == 0:
-                self.t_outside[idx[i]:idx[i+1]] = [T_days_avg[i]]*24
+                t_outside[idx[i]:idx[i+1]] = [T_days_avg[i]]*24
             elif i == 1:
-                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1]) / 1.5]*24
+                t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1]) / 1.5]*24
             elif i == 2:
-                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2]) / 1.75]*24
+                t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2]) / 1.75]*24
             else:
-                self.t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2] + 0.125 * T_days_avg[i-3]) / 1.875]*24
-        #print(self.t_outside)
+                t_outside[idx[i]:idx[i+1]] = [(T_days_avg[i] + 0.5 * T_days_avg[i-1] + 0.25 * T_days_avg[i-2] + 0.125 * T_days_avg[i-3]) / 1.875]*24
+        return t_outside
 
     # main calculation
-    def run(self, t_outside):
+    def run(self, t_outside_original):
+        t_outside = t_outside_original.copy() # copy to avoid changing the original list with smoothing function
         AC_consumption = [self.house.ac.init_ac() * self.house.cooling_cap]
         HP_consumption = [self.house.hp.init_hp() * self.house.cooling_cap]
         net_demand = [0]
@@ -286,7 +287,7 @@ class RunSimulation:
         pv_gen = self.pv_gen
         overproduction_list = [0]
         #smooth temperature to consider the inertia of the house
-        #self.temperature_smoothing()
+        t_outside=self.temperature_smoothing(t_outside)
 
         for idx, t in enumerate(t_outside):
             t_next = t_inside[idx] + self.house.get_t_diff(
@@ -508,7 +509,6 @@ class PlotBaseCase:
                 total_demand += tot*scale*0.5 #0.5 as we have two types of SFH and MFH -> assume that each contributes with 50% to the share of all houses in the specific type
                 total_net_demand +=net*scale*0.5
             output[country] = [total_demand, total_net_demand]
-        print(output)
         return output
 
     def plot_scale_up(self):
