@@ -39,11 +39,11 @@ OPERATION_RANGE_AC = 0
 
 class ACUnit:
 
-    def __init__(self, power, setpoint, t_initial):
+    def __init__(self, power, setpoint, t_initial,COP):
         self.setpoint = setpoint #desired temperature [K]
         self.power = power # power [W]
         self.t_initial = t_initial # initial temp [K]
-        self.COP = COP_AC # coefficient of performance
+        self.COP = COP # coefficient of performance
         self.output = 0
         # linear increase range
         self.lowerbound = self.setpoint 
@@ -61,7 +61,7 @@ class ACUnit:
 
         if t_in > self.upperbound:
             self.output = 1 # 100%
-        elif t_in < self.lowerbound:
+        elif t_in <= self.lowerbound:
             self.output = 0 # 0%
         else:  
             if (t_in - self.lowerbound) / (self.upperbound - self.lowerbound) >= 0.5: # when in upper 50% of temp range
@@ -75,11 +75,11 @@ class ACUnit:
 
 class HeatPump:
 
-    def __init__(self, power, setpoint, t_initial):
+    def __init__(self, power, setpoint, t_initial,COP):
         self.setpoint = setpoint
         self.power = power
         self.t_initial = t_initial
-        self.COP = COP_HP
+        self.COP = COP
 
         # linear increase range
         self.lowerbound = self.setpoint - OPERATION_RANGE_HP
@@ -175,6 +175,8 @@ class House:
         people, # People in house
         v_rate, # Venitaltion rate per hour [0 to 1] (little influence)
         setpoint_ac, # Desired AC temp [K]
+        COP_ac, #COP AC
+        COP_hp, #COP HP
         setpoint_hp, # Desired HP temp [K]
         battery_cap, # Battery capacity [Wh]
         battery_throughput, # Battery throughput [W]
@@ -205,8 +207,8 @@ class House:
         self.wall_th = wall_th
         self.battery_cap = battery_cap
         self.battery_throughput = battery_throughput
-        self.ac = ACUnit(cooling_cap, self.setpoint_ac, self.t_initial)
-        self.hp = HeatPump(heating_cap, self.setpoint_hp, self.t_initial)
+        self.ac = ACUnit(cooling_cap, self.setpoint_ac, self.t_initial, COP_ac)
+        self.hp = HeatPump(heating_cap, self.setpoint_hp, self.t_initial, COP_hp)
         self.battery = Battery(self.battery_cap, self.battery_throughput)
         self.inertia = self.set_inertia()
         self.pv_per_area = pv_per_area
@@ -238,6 +240,9 @@ class House:
             + (self.hp.control(t_in) * self.heating_cap * timestep / self.inertia)
         )
         return t_diff
+
+
+
     
 class RunSimulation:
 
@@ -289,9 +294,9 @@ class RunSimulation:
             )
             t_inside.append(t_next)
 
-            cooling_needed = self.house.cooling_cap * self.house.ac.control(t_inside[idx])
+            cooling_needed = self.house.cooling_cap * self.house.ac.control(t_inside[idx]) * (1/self.house.ac.COP)
             AC_consumption.append(cooling_needed)
-            heating_needed = self.house.heating_cap * self.house.hp.control(t_inside[idx])
+            heating_needed = self.house.heating_cap * self.house.hp.control(t_inside[idx])*(1/self.house.hp.COP)
             HP_consumption.append(heating_needed)
 
             overproduction = pv_gen[idx] - cooling_needed
@@ -358,6 +363,21 @@ class RunSimulation:
             self.house.shgc = self.scenario["shgc"][idx]
             output_dictionary[years[idx]] = self.run(t_outside)
         return output_dictionary
+
+    def run_sensitivity_analysis(self, t_outside, parameters, range):
+        output_dictionary = {}
+        copy_class = self.house.__dict__.copy()
+        for param in parameters:
+            list_output = []
+            for multiplier in range:
+                if len(param)>1:
+                    for sub_param in param:
+                        self.house[sub_param] = copy_class[sub_param] * multiplier
+                else:
+                    self.house[param] = copy_class[param] * multiplier
+                list_output += list(np.sum(self.run(t_outside)[1]))
+            output_dictionary[param] = list_output
+
 
 # plot class, define different plots
 
@@ -456,6 +476,103 @@ class PlotBaseCase:
         plt.title("Heat Pump electricity consumption")
         plt.legend()
         plt.show()
+
+    def plt_temp_sensitivity(self, temp_list):
+        plt.figure(figsize=(10, 6))
+        for house_type,results in self.output.items():
+            plt.plot(temp_list, results, label=house_type)
+        plt.xlabel("Temperature [K]")
+        plt.ylabel("Cooling demand [Wh]")
+        plt.title("Sensitivity analysis of temperature")
+        plt.legend()
+        plt.show()
+
+    def scale_up(self):
+        """
+        Scales up the simulation results to the total demand of the country
+
+        :return:
+        dict: dictionary with the total demand and net demand for each country
+        """
+        output = {}
+        for country in self.output.keys():
+            total_demand = 0
+            total_net_demand = 0
+            for house_type in self.output[country]["Simulation"].keys():
+                tot = np.sum(self.output[country]["Simulation"][house_type][1])
+                net = np.sum(self.output[country]["Simulation"][house_type][4])
+                if "MFH" in house_type:
+                    scale = self.output[country]["MFH"]
+                else:
+                    scale = self.output[country]["SFH"]
+                total_demand += tot*scale*0.5 #0.5 as we have two types of SFH and MFH -> assume that each contributes with 50% to the share of all houses in the specific type
+                total_net_demand +=net*scale*0.5
+            output[country] = [total_demand, total_net_demand]
+        print(output)
+        return output
+
+    def plot_scale_up(self):
+        scaled_output = self.scale_up()
+        # Data
+        countries = [country for country in scaled_output.keys()]
+        total_demand = [output[0] for output in scaled_output.values()]
+        net_demand = [output[1] for output in scaled_output.values()]
+
+        # Set the width of the bars
+        bar_width = 0.35
+
+        # Set the position of the bars on the x-axis
+        x = np.arange(len(countries))
+
+        # Plotting the bars
+        fig, ax = plt.subplots()
+        bars1 = ax.bar(x - bar_width / 2, total_demand, bar_width, label='Total demand')
+        bars2 = ax.bar(x + bar_width / 2, net_demand, bar_width, label='Net demand')
+
+        # Adding labels, title, and ticks
+        ax.set_ylabel('Demand in Wh')
+        ax.set_title('Scaled simulation results with Battery')
+        ax.set_xticks(x)
+        ax.set_xticklabels(countries)
+        ax.legend()
+
+        # Adding space between bars of different countries
+        ax.set_xlim(-0.5, len(countries) - 0.5)
+
+        plt.tight_layout()
+        plt.show()
+
+
+
+
+
+
+  #def plt_sensitivity_analysis(self):
+  #      for house_type in self.output:
+  #          # Sample data
+  #          categories = []
+  #          values =[]
+  #          for params, output in self.output[house_type].items():
+  #              categories += [params]
+  #              values += [output]
+#
+#            x = np.arange(3)
+ #               # Plotting
+  #          plt.figure(figsize=(8, 6))
+   #         bar_width = 0.3
+
+    #        plt.barh(x - bar_width, values[0], height=bar_width, label='Value 1')
+     #       plt.barh(x, values[1], height=bar_width, label='Value 2')
+      #      plt.barh(x + bar_width, values[2], height=bar_width, label='Value 3')
+
+       #     plt.yticks(x, categories[0:3])
+        #    plt.xlabel('Values')
+         #   plt.title('Tornado Plot')
+          #  plt.legend()
+
+         #   plt.grid(axis='x', linestyle='--', alpha=0.7)
+         #   plt.tight_layout()
+         #   plt.show()
 
     # def plot_temperature_scenario(self, window):
     #     for year in self.output:
@@ -621,6 +738,9 @@ class PlotScenario:
         plt.title(f'Evolution of Heating Demand for {self.house}')
         plt.legend()
         plt.show()
+
+
+
 
 #pv input
 # class pvModule:

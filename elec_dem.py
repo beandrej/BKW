@@ -8,12 +8,18 @@ T2M_2019_MAD = pd.read_csv(r"ren_ninja/ESP/T2M_2019_MAD.csv", delimiter=",", hea
 T2M_2019_BAR = pd.read_csv(r"ren_ninja/ESP/T2M_2019_BAR.csv", delimiter=",", header=3)["t2m"].tolist() # Barcelona
 T2M_2019_STO = pd.read_csv(r"ren_ninja/SWE/T2M_2019_STO.csv", delimiter=",", header=3)["t2m"].tolist() # Stockholm
 T2M_2019_SOF = pd.read_csv(r"ren_ninja/BUL/T2M_2019_SOF.csv", delimiter=",", header=3)["t2m"].tolist() # Sofia
+T2M_2019_HAM = pd.read_csv(r"ren_ninja/DE/2019_Hamburg.csv", delimiter=",", header=3)["t2m"].tolist() # Hamburg
+T2M_2019_PAR = pd.read_csv(r"ren_ninja/FR/2019_Paris.csv", delimiter=",", header=3)["t2m"].tolist() # Paris
+T2M_2019_ROM = pd.read_csv(r"ren_ninja/IT/2019_Rome.csv", delimiter=",", header=3)["t2m"].tolist() # Rome
 
 IRRADIATION_2019_ZRH = pd.read_csv(r"ren_ninja/CHE/IRR_2019_ZRH.csv", delimiter=",", header=3)["swgdn"].tolist() # Zurich
 IRRADIATION_2019_MAD = pd.read_csv(r"ren_ninja/ESP/IRR_2019_MAD.csv", delimiter=",", header=3)["swgdn"].tolist() # Madrid
 IRRADIATION_2019_BAR = pd.read_csv(r"ren_ninja/ESP/IRR_2019_BAR.csv", delimiter=",", header=3)["swgdn"].tolist() # Barcelona
 IRRADIATION_2019_STO = pd.read_csv(r"ren_ninja/SWE/IRR_2019_STO.csv", delimiter=",", header=3)["swgdn"].tolist() # Stockholm
 IRRADIATION_2019_SOF = pd.read_csv(r"ren_ninja/BUL/IRR_2019_SOF.csv", delimiter=",", header=3)["swgdn"].tolist() # Sofia
+IRRADIATION_2019_HAM = pd.read_csv(r"ren_ninja/DE/2019_Hamburg.csv", delimiter=",", header=3)["swgdn"].tolist() # Hamburg
+IRRADIATION_2019_PAR = pd.read_csv(r"ren_ninja/FR/2019_Paris.csv", delimiter=",", header=3)["swgdn"].tolist() # Paris
+IRRADIATION_2019_ROM = pd.read_csv(r"ren_ninja/IT/2019_Rome.csv", delimiter=",", header=3)["swgdn"].tolist() # Rome
 
 # convert to kelvin
 T_OUTSIDE_2019_ZRH = [temp + 273.15 for temp in T2M_2019_ZRH]
@@ -21,13 +27,16 @@ T_OUTSIDE_2019_MAD = [temp + 273.15 for temp in T2M_2019_MAD]
 T_OUTSIDE_2019_BAR = [temp + 273.15 for temp in T2M_2019_BAR]
 T_OUTSIDE_2019_STO = [temp + 273.15 for temp in T2M_2019_STO]
 T_OUTSIDE_2019_SOF = [temp + 273.15 for temp in T2M_2019_SOF]
+T_OUTSIDE_2019_HAM = [temp + 273.15 for temp in T2M_2019_HAM]
+T_OUTSIDE_2019_PAR = [temp + 273.15 for temp in T2M_2019_PAR]
+T_OUTSIDE_2019_ROM = [temp + 273.15 for temp in T2M_2019_ROM]
 
 
 # ------------- Import defined house parameters -----------
 
-from parameters import CHE_HOUSE_TYPES, ESP_HOUSE_TYPES, SWE_HOUSE_TYPES, BUL_HOUSE_TYPES
+from parameters import CHE_HOUSE_TYPES, ESP_HOUSE_TYPES, SWE_HOUSE_TYPES, BUL_HOUSE_TYPES, IT_HOUSE_TYPES, DE_HOUSE_TYPES,FR_HOUSE_TYPES
 from parameters import CHE_OLD_MFH, ESP_OLD_MFH, SWE_OLD_MFH, BUL_OLD_MFH
-from parameters import SETPOINT_AC_CH, SETPOINT_HP_CH, SETPOINT_AC_ESP, SETPOINT_HP_ESP, SETPOINT_AC_SWE, SETPOINT_HP_SWE, SETPOINT_AC_BUL, SETPOINT_HP_BUL 
+from parameters import SETPOINT_AC_CH, SETPOINT_HP_CH, SETPOINT_AC_ESP, SETPOINT_HP_ESP, SETPOINT_AC_SWE, SETPOINT_HP_SWE, SETPOINT_AC_BUL, SETPOINT_HP_BUL, SETPOINT_AC_FR,SETPOINT_HP_FR,SETPOINT_AC_DE,SETPOINT_HP_DE,SETPOINT_AC_IT,SETPOINT_HP_IT
 
 #-------------- Initialize simulation objects -----------------
 
@@ -87,6 +96,47 @@ def simulate_uvalue_scenario(house_types, t_outside, irradiation, scenario, spec
     output = temp[specific_house].run_scenario_uvalue(t_outside)
     return output
 
+
+
+
+
+def simulate_sensitivity_analysis (house_types, t_outside, irradiation, list_of_parameters, list_range):
+    output = {}
+    for house in house_types.keys():
+        output_dictionary = {}
+        for param in list_of_parameters:
+            copy_house = house_types[house].copy()
+            list_output = []
+            for multiplier in list_range:
+                if type(param) ==list:
+                    for sub_param in param:
+                        copy_house[sub_param] = house_types[house][sub_param] * multiplier
+                else:
+                   copy_house[param] = house_types[house][param] * multiplier
+                list_output += [np.sum(RunSimulation(House(**copy_house), irradiation, 3600).run(t_outside)[1])]
+            if type(param) == list:
+                output_dictionary[param[0] + ' +others'] = list_output
+            else:
+                output_dictionary[param] = list_output
+        output[house] = output_dictionary
+    return output
+
+def simulate_sensitivity_temperature_setpoint(house_types, t_outside, irradiation, list_of_temperatures):
+    output = {}
+    for house in house_types.keys():
+        output_demand= []
+        for temp in list_of_temperatures:
+            copy_house = house_types[house].copy()
+            copy_house['setpoint_ac'] = temp
+            if temp<=293:
+                copy_house['setpoint_hp'] = temp-1
+            else:
+                copy_house['setpoint_hp'] = 293
+            output_demand += [np.sum(RunSimulation(House(**copy_house), irradiation, 3600).run(t_outside)[1])]
+        output[house] = output_demand
+    print(output)
+    return output
+
 def variance(input_list):
     n = len(input_list)
     mean = sum(input_list) / n
@@ -105,33 +155,56 @@ def print_stats(output_dict, country):
         print(f'Net Cooling Demand {house}: {round(sum(output_dict[house][4]) / (3.5 * 1e3), 2)} [kWh] \n')
         print('\n')
 
+#------------ Sensitivity Analysis ------------------
+"""
+CHE_HOUSES_SENSITIVITY = simulate_sensitivity_analysis(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, [['U_wall', 'U_window', 'U_floor'],'shgc','COP_ac','COP_hp','battery_cap'], [0.9, 1, 1.1])
+#PlotBaseCase(CHE_HOUSES_SENSITIVITY).plt_sensitivity_analysis() -> for plotting extract results to excel
 
+CHE_HOUSES_TEMP_SENSITIVITY = simulate_sensitivity_temperature_setpoint(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, list(range(295,302,1)))
+PlotBaseCase(CHE_HOUSES_TEMP_SENSITIVITY).plt_temp_sensitivity(list(range(295,302,1)))
+"""
 #------------ Perform calculations of sim object ------------------
 
 CHE_HOUSES_SIMULATION = simulate_house(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH)
 ESP_HOUSES_SIMULATION = simulate_house(ESP_HOUSE_TYPES, T_OUTSIDE_2019_MAD, IRRADIATION_2019_MAD)
 SWE_HOUSES_SIMULATION = simulate_house(SWE_HOUSE_TYPES, T_OUTSIDE_2019_STO, IRRADIATION_2019_STO)
 BUL_HOUSES_SIMULATION = simulate_house(BUL_HOUSE_TYPES, T_OUTSIDE_2019_SOF, IRRADIATION_2019_SOF)
-
+DE_HOUSES_SIMULATION = simulate_house(DE_HOUSE_TYPES, T_OUTSIDE_2019_HAM, IRRADIATION_2019_HAM)
+IT_HOUSES_SIMULATION = simulate_house(IT_HOUSE_TYPES, T_OUTSIDE_2019_ROM, IRRADIATION_2019_ROM)
+FR_HOUSES_SIMULATION = simulate_house(FR_HOUSE_TYPES, T_OUTSIDE_2019_PAR, IRRADIATION_2019_PAR)
+"""
 CHE_OLD_MFH_SIMULATION = simulate_house(CHE_OLD_MFH, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH)
 ESP_OLD_MFH_SIMULATION = simulate_house(ESP_OLD_MFH, T_OUTSIDE_2019_MAD, IRRADIATION_2019_MAD)
 SWE_OLD_MFH_SIMULATION = simulate_house(SWE_OLD_MFH, T_OUTSIDE_2019_STO, IRRADIATION_2019_STO)
 BUL_OLD_MFH_SIMULATION = simulate_house(BUL_OLD_MFH, T_OUTSIDE_2019_SOF, IRRADIATION_2019_SOF)
+"""
+#--------------- Scale Up -------------------------------------------
+countries_dict = {'DE':{'Simulation':DE_HOUSES_SIMULATION, 'MFH':26994800,'SFH':16361800},
+                  'FR':{'Simulation':FR_HOUSES_SIMULATION, 'MFH':  24665600,'SFH':  12934400},
+                  'IT':{'Simulation':IT_HOUSES_SIMULATION, 'MFH':  13520000,'SFH':  12480000},
+                  'ESP':{'Simulation':ESP_HOUSES_SIMULATION, 'MFH':  17449600,'SFH':  9150400},
+                  'SWE':{'Simulation':SWE_HOUSES_SIMULATION, 'MFH': 2508050,'SFH':  2641950},
+                'BUL':{'Simulation':BUL_HOUSES_SIMULATION, 'MFH':  1879290,'SFH':  2110710}}
+
+PlotBaseCase(countries_dict).plot_scale_up()
 
 # -------------- Initialize Plotting objects ------------------------
-
+"""
 CHE_COMPARE_PLOT = PlotBaseCase(CHE_HOUSES_SIMULATION)
 ESP_COMPARE_PLOT = PlotBaseCase(ESP_HOUSES_SIMULATION)
 SWE_COMPARE_PLOT = PlotBaseCase(SWE_HOUSES_SIMULATION)
 BUL_COMPARE_PLOT = PlotBaseCase(BUL_HOUSES_SIMULATION)
+DE_COMPARE_PLOT = PlotBaseCase(DE_HOUSES_SIMULATION)
+FR_COMPARE_PLOT = PlotBaseCase(FR_HOUSES_SIMULATION)
+IT_COMPARE_PLOT = PlotBaseCase(IT_HOUSES_SIMULATION)
 
 CHE_SINGLE_PLOT = PlotBaseCase(CHE_OLD_MFH_SIMULATION)
 ESP_SINGLE_PLOT = PlotBaseCase(ESP_OLD_MFH_SIMULATION)
 SWE_SINGLE_PLOT = PlotBaseCase(SWE_OLD_MFH_SIMULATION)
 BUL_SINGLE_PLOT = PlotBaseCase(BUL_OLD_MFH_SIMULATION)
-
+"""
 # ---------------------- Plot output --------------------------
-
+"""
 avg_window = 168
 
 CHE_SINGLE_PLOT.plt_supply_vs_demand(avg_window)
@@ -139,7 +212,7 @@ CHE_SINGLE_PLOT.plt_supply_vs_demand(avg_window)
 print_stats(CHE_HOUSES_SIMULATION, 'SWITZERLAND')
 
 #SCENARIO_CH_TEMP = simulate_uvalue_scenario(CHE_HOUSE_TYPES, T_OUTSIDE_2019_ZRH, IRRADIATION_2019_ZRH, CHE_UVALUE_SCENARIO, "MFH after 2000")
-
+"""
 # ------------ Perform calculations of sim object ------------------
 
    
