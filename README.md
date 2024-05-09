@@ -30,3 +30,15 @@ There 2 inputs which have to be downloaded prior to running the model:
 In this project all data regarding these 2 variables has been downloaded from **renewables.ninja**
 
 ## Visualization of Simulation
+
+<img src="https://github.com/beandrej/BKW_CS4/blob/main/example%20plots/IT_supply_demand_old_MFH.png" alt="Supply vs demand in the example of an old multi family house in Italy" width="1000" />
+<img src="https://github.com/beandrej/BKW_CS4/blob/main/example%20plots/IT_t_inside.png" alt="Inside temperature" width="600" />
+<p float="center">
+  <img src="https://github.com/beandrej/BKW_CS4/blob/main/example%20plots/IT_battery_flow_old_MFH.png" alt="Battery Flow" width="400" />
+  <img src="https://github.com/beandrej/BKW_CS4/blob/main/example%20plots/IT_battery_SOC_old_MFH.png" alt="Battery SOC" width="400" />
+</p>
+
+## Acknowledgements
+
+Members of the project: Andrej Bernhard, Hannah Livingston, Lukas Schmidt-Engelbertz, Clara Tillous Oliva, Fiona Turner-Hehlen
+This group project was a cooperation with BKW, which supported us during the process giving valuable inputs.
