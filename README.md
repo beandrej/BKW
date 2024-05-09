@@ -40,5 +40,5 @@ In this project all data regarding these 2 variables has been downloaded from **
 
 ## Acknowledgements
 
-Members of the project: Andrej Bernhard, Hannah Livingston, Lukas Schmidt-Engelbertz, Clara Tillous Oliva, Fiona Turner-Hehlen
+Members of the project: Andrej Bernhard, Hannah Livingston, Lukas Schmidt-Engelbertz, Clara Tillous Oliva, Fiona Turner-Hehlen.
 This group project was a cooperation with BKW, which supported us during the process giving valuable inputs.
