@@ -29,6 +29,8 @@ There 2 inputs which have to be downloaded prior to running the model:
 
 In this project all data regarding these 2 variables has been downloaded from **renewables.ninja**
 
+To run the simulation create a new house dictionary or use an existing one and run the simulation in *elec_dem.py*
+
 ## Visualization of Simulation
 
 <img src="https://github.com/beandrej/BKW_CS4/blob/main/example%20plots/IT_supply_demand_old_MFH.png" alt="Supply vs demand in the example of an old multi family house in Italy" width="1000" />
