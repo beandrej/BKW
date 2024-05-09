@@ -150,9 +150,10 @@ class Battery:
         else: # if battery is already empty
             self.flow = 0
             self.soc = 0
-    
+
+
     def is_full(self):
-        return self.capacity == self.soc
+        return self.capacity == self.soc 
     
     def is_empty(self):
         return self.soc == 0
@@ -284,6 +285,7 @@ class RunSimulation:
         net_demand = [0]
         SOC_battery = [0]
         flow_battery = [0]
+        feed_in = [0]
         t_inside = [self.house.t_initial]
         pv_gen = self.pv_gen
         overproduction_list = [0]
@@ -303,6 +305,7 @@ class RunSimulation:
 
             overproduction = pv_gen[idx] - cooling_needed
             overproduction_list.append(overproduction)
+
 
             # Battery storage interacting with PV prodcution
             # Battery charge and discharge cycles
@@ -343,8 +346,9 @@ class RunSimulation:
         HP_consumption.pop(0)
         overproduction_list.pop(0)
 
-        return t_inside, AC_consumption, SOC_battery, flow_battery, net_demand, HP_consumption, pv_gen, overproduction_list
 
+        return t_inside, AC_consumption, SOC_battery, flow_battery, net_demand, HP_consumption, pv_gen, overproduction_list, feed_in
+    # LIST POS.     0           1               2           3               4           5          6           7               8
     # run screnarios for future years
     def run_scenario_temp(self, t_outside):
         years = self.scenario["years"]
@@ -358,7 +362,8 @@ class RunSimulation:
     def run_scenario_uvalue(self, t_outside):
         years = self.scenario["years"]
         output_dictionary = {}
-        for idx, year in enumerate(years):
+
+        for idx, _ in enumerate(years):
             self.house.U_wall = self.scenario["U_wall"][idx]
             self.house.U_window = self.scenario["U_window"][idx]
             self.house.U_floor = self.scenario["U_floor"][idx]
@@ -380,7 +385,6 @@ class RunSimulation:
                 list_output += list(np.sum(self.run(t_outside)[1]))
             output_dictionary[param] = list_output
 
-
 # plot class, define different plots
 
 class PlotBaseCase:
@@ -396,6 +400,7 @@ class PlotBaseCase:
             supply = convolve(self.output[house_type][6], window)
             difference = convolve(self.output[house_type][7], window)
             netto = convolve(self.output[house_type][4], window)
+            feed_in = convolve(self.output[house_type][8],window)
             heat = convolve(self.output[house_type][5], window)
             #curves = [(DAYS_IN_YEAR, y) for y in sorted([demand, supply, difference, netto], key=lambda curve: curve.min())]
 
@@ -403,11 +408,12 @@ class PlotBaseCase:
             plt.plot(DAYS_IN_YEAR, supply, label='PV Production', color='orange', alpha=0.3)
             plt.plot(DAYS_IN_YEAR, difference, label='Overproduction', color='orange', )
             plt.plot(DAYS_IN_YEAR, netto, label='Net Cooling Demand', color='g')
-            plt.plot(DAYS_IN_YEAR, heat, label='Heat Demand', color='r', alpha=0.4)
+            plt.plot(DAYS_IN_YEAR, feed_in, label='Feed in', color='brown', alpha=0.6)
+            #plt.plot(DAYS_IN_YEAR, heat, label='Heat Demand', color='r', alpha=0.4)
 
-        plt.xlabel("Time [days]")
-        plt.ylabel("Supply and Demand profile [Wh]")
-        plt.title("Comparison between supply & demand")
+        plt.xlabel("Time [days]", fontsize=15)
+        plt.ylabel("Supply and Demand profile [Wh]", fontsize=15)
+        plt.title("Comparison between supply & demand", fontsize=20)
         plt.legend()
         plt.show()
     
@@ -626,12 +632,12 @@ class PlotBaseCase:
         fig, ax = plt.subplots(figsize=(10, 6))
 
         for i, house in enumerate(houses):
-            data = [sum(self.output[house][1]) / (1e3 * 3.5)]
+            data = [sum(self.output[house][5]) / (1e3 * 3.5)]
             ax.bar(index + i * bar_width, data, bar_width, label=house)
 
         ax.set_xlabel('House Types')
         ax.set_ylabel('Heating demand [kWh]')
-        ax.set_title('Aggregated Cooling Demand')
+        ax.set_title('Aggregated Heating Demand')
         ax.set_xticks(index + bar_width * (len(houses) - 1) / 2)
         ax.set_xticklabels(categories)
         ax.legend()
@@ -664,10 +670,10 @@ class PlotBaseCase:
     
 
 class PlotScenario:
-    def __init__(self, output_dictionary, specific_house, t_des=295):
+    def __init__(self, output_dictionary, scenario, t_des=295):
         self.output = output_dictionary
         self.t_des = t_des
-        self.house = specific_house
+        self.scenario = scenario
 
     def plt_t_inside(self, ac_set, hp_set):
         for year in self.output:
@@ -683,16 +689,19 @@ class PlotScenario:
         plt.show()
 
     def plt_scenario_ac_demand(self):
-        agg_demand = []
-        for year in self.output:
-            agg_demand.append(sum(self.output[year][1])/1e6)
+        for house in self.output.keys():
+            agg_demand = []
+            for year in self.output[house].keys():
+                agg_demand.append(sum(self.output[house][year][1])/1e3)
+            plt.plot(self.output[house].keys(), agg_demand, label=house)
 
-        plt.plot(self.output.keys(), agg_demand)
         plt.xlabel("Year")
-        plt.ylabel("Aggregated Demand [MWh]")
-        plt.title(f'Evolution of Cooling Demand for {self.house}')
+        plt.ylabel("Aggregated AC Demand [kWh]")
+        plt.title(f'Evolution of AC Demand')
         plt.legend()
         plt.show()
+        
+
 
     def plt_scenario_soc(self):
         for year in self.output:
@@ -717,30 +726,30 @@ class PlotScenario:
         plt.show()
 
     def plt_scenario_net_demand(self):
-        agg_demand = []
-        for year in self.output:
-            agg_demand.append(sum(self.output[year][4])/1e3)
+        for house in self.output.keys():
+            agg_demand = []
+            for year in self.output[house].keys():
+                agg_demand.append(sum(self.output[house][year][4])/1e3)
+            plt.plot(self.output[house].keys(), agg_demand, label=house)
 
-        plt.plot(self.output.keys(), agg_demand)
         plt.xlabel("Year")
         plt.ylabel("Aggregated Demand [kWh]")
-        plt.title(f'Evolution of Cooling Demand for {self.house}')
+        plt.title(f'Evolution of Net Cooling Demand')
         plt.legend()
         plt.show()
 
     def plt_scenario_hp_demand(self):
-        agg_demand = []
-        for year in self.output:
-            agg_demand.append(sum(self.output[year][5])/1e6)
+        for house in self.output.keys():
+            agg_demand = []
+            for year in self.output[house].keys():
+                agg_demand.append(sum(self.output[house][year][5])/1e3)
+            plt.plot(self.output[house].keys(), agg_demand, label=house)
 
-        plt.plot(self.output.keys(), agg_demand)
         plt.xlabel("Year")
         plt.ylabel("Aggregated Demand [MWh]")
-        plt.title(f'Evolution of Heating Demand for {self.house}')
+        plt.title(f'Evolution of Heating Demand')
         plt.legend()
         plt.show()
-
-
 
 
 #pv input
